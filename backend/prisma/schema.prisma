@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+//////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+enum TokenType {
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
+
+//////////////////////////////////////////////////
+// USER & AUTH
+//////////////////////////////////////////////////
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String    // Hashed password
+  name          String?
+  currency      String    @default("HUF")
+  imageUrl      String?
+  
+  // Relations
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+  tags          Tag[]
+  budgets       Budget[]
+  tokens        AuthToken[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model AuthToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+}
+
+//////////////////////////////////////////////////
+// ACCOUNT (Bank, Cash, Savings)
+//////////////////////////////////////////////////
+
+model Account {
+  id          String   @id @default(cuid())
+  name        String   // pl. "OTP Bank", "Készpénz"
+  balance     Decimal  @default(0) @db.Decimal(12, 2)
+  color       String?  // UI megjelenítéshez
+  icon        String?  // UI ikon neve
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // A transzfer tranzakciók miatt két irányú kapcsolat kell
+  fromTransactions Transaction[] @relation("fromAccount")
+  toTransactions   Transaction[] @relation("toAccount")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+//////////////////////////////////////////////////
+// CATEGORY
+//////////////////////////////////////////////////
+
+model Category {
+  id      String          @id @default(cuid())
+  name    String
+  type    TransactionType
+  icon    String?
+  color   String?
+
+  userId  String
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@unique([userId, name, type]) // Egy usernek ne lehessen két ugyanolyan nevű kategóriája egy típuson belül
+}
+
+//////////////////////////////////////////////////
+// TRANSACTION
+//////////////////////////////////////////////////
+
+model Transaction {
+  id          String          @id @default(cuid())
+  amount      Decimal         @db.Decimal(12, 2)
+  note        String?         @db.Text
+  place       String?         // Hol költöttük? (pl. "Tesco", "Shell")
+  date        DateTime        @default(now())
+  type        TransactionType
+
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId  String?
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // Honnan ment el a pénz?
+  fromAccountId String?
+  fromAccount   Account?      @relation("fromAccount", fields: [fromAccountId], references: [id])
+
+  // Hová érkezett a pénz? (Csak INCOME vagy TRANSFER esetén)
+  toAccountId   String?
+  toAccount     Account?      @relation("toAccount", fields: [toAccountId], references: [id])
+
+  tags        TransactionTag[]
+
+  createdAt   DateTime        @default(now())
+
+  @@index([userId, date])
+}
+
+//////////////////////////////////////////////////
+// TAGS (Címkék az extra szűréshez)
+//////////////////////////////////////////////////
+
+model Tag {
+  id      String   @id @default(cuid())
+  name    String
+
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions TransactionTag[]
+
+  @@unique([userId, name])
+}
+
+// Kapcsolótábla a Many-to-Many kapcsolathoz
+model TransactionTag {
+  transactionId String
+  tagId         String
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+}
+
+//////////////////////////////////////////////////
+// BUDGET (Költségkeret figyelés)
+//////////////////////////////////////////////////
+
+model Budget {
+  id          String   @id @default(cuid())
+  limitAmount Decimal  @db.Decimal(12, 2)
+  month       Int      // 1-12
+  year        Int      // pl. 2026
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month, year])
+}
