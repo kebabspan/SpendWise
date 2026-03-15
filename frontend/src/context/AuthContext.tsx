@@ -2,17 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { api } from '../api/client';
 import type { LoginResponse, User } from '../types';
 
-interface RegisterPayload {
-  email: string;
-  password: string;
-  name: string;
-  currency?: string;
-}
-
-interface LoginPayload {
-  email: string;
-  password: string;
-}
+interface RegisterPayload { email: string; password: string; name: string; currency?: string; }
+interface LoginPayload { email: string; password: string; }
 
 interface AuthContextValue {
   user: User | null;
@@ -27,37 +18,30 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const TOKEN_KEY = 'finance_tracker_token';
-const USER_KEY = 'finance_tracker_user';
+const TOKEN_KEY = 'spendwise_token';
+const USER_KEY = 'spendwise_user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState<User | null>(() => {
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : null;
+    try { return JSON.parse(localStorage.getItem(USER_KEY) ?? 'null'); } catch { return null; }
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const boot = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const { data } = await api.get<User>('/user/me');
+    if (!token) { setLoading(false); return; }
+    api.get<User>('/user/me')
+      .then(({ data }) => {
         setUser(data);
         localStorage.setItem(USER_KEY, JSON.stringify(data));
-      } catch {
+      })
+      .catch(() => {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
         setToken(null);
         setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    void boot();
+      })
+      .finally(() => setLoading(false));
   }, [token]);
 
   const persistAuth = (payload: LoginResponse) => {
@@ -70,18 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (payload: LoginPayload) => {
     const { data } = await api.post<LoginResponse>('/auth/login', payload);
     persistAuth(data);
-    await refreshUser();
   };
 
   const register = async (payload: RegisterPayload) => {
-    try {
-      await api.post('/auth/register', payload);
-      await login({ email: payload.email, password: payload.password });
-    } catch (error: any) {
-      // Itt láthatod a szerver pontos hibaüzenetét
-      console.error("Regisztrációs hiba részletei:", error.response?.data);
-      throw error; // Így a komponens is értesül róla
-    }
+    // A register endpoint most már közvetlenül tokent ad vissza
+    const { data } = await api.post<LoginResponse>('/auth/register', payload);
+    persistAuth(data);
   };
 
   const logout = () => {
@@ -99,12 +77,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (payload: Partial<User> & { password?: string }) => {
     const { data } = await api.patch<User>('/user/update', payload);
-    setUser((previous) => ({ ...previous, ...data } as User));
-    localStorage.setItem(USER_KEY, JSON.stringify({ ...user, ...data }));
+    const updated = { ...user, ...data } as User;
+    setUser(updated);
+    localStorage.setItem(USER_KEY, JSON.stringify(updated));
   };
 
   const value = useMemo(
     () => ({ user, token, loading, login, register, logout, refreshUser, updateProfile }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, token, loading],
   );
 
@@ -112,9 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }

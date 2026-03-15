@@ -1,37 +1,45 @@
-# Expense Tracker Frontend
+# SpendWise – Frontend indítási útmutató
 
-React + Vite frontend a megadott NestJS backendhez.
-
-## Funkciók
-- JWT alapú regisztráció és bejelentkezés
-- Dashboard összesített statokkal és chartokkal
-- Transactions oldal tranzakció, kategória és account létrehozással
-- Budgets oldal kategóriánkénti budget követéssel
-- Reports oldal automatikus insightokkal
-- Profil szerkesztés és kijelentkezés
+## Előfeltételek
+- Node.js 18+
+- pnpm telepítve (`npm install -g pnpm`)
+- A backend fut (Docker)
 
 ## Indítás
-```bash
-npm install
-cp .env.example .env
-npm run dev
+
+### Függőségek telepítése
+```powershell
+pnpm install
 ```
 
-A `.env` fájlban:
-```bash
+### Fejlesztői szerver indítása
+```powershell
+pnpm run dev
+```
+
+Böngészőben: http://localhost:5173 (vagy 5174 ha foglalt)
+
+### Build (produkciós)
+```powershell
+pnpm run build
+```
+
+### Build előnézet
+```powershell
+pnpm run preview
+```
+
+---
+
+## Környezeti változók
+Hozz létre egy `.env.local` fájlt a `frontend/` mappában ha eltérő backend URL-t használsz:
+
+```
 VITE_API_URL=http://localhost:3001/api
 ```
 
-## Backend kompatibilitás
-A frontend ezekre a végpontokra csatlakozik:
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /user/me`
-- `PATCH /user/update`
-- `GET/POST /accounts`
-- `GET/POST /categories`
-- `GET/POST/DELETE /budgets`
-- `GET/POST/DELETE /transactions`
-
-## Megjegyzés
-A backendben jelenleg nincs külön dashboard/report végpont, ezért a dashboard és reports számításai a frontendben készülnek a betöltött tranzakciókból, budgetekből és kategóriákból.
+## Portok
+| Szolgáltatás | Port |
+|---|---|
+| Frontend (dev) | http://localhost:5173 |
+| Backend API | http://localhost:3001/api |

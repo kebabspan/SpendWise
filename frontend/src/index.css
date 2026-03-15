@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   font-family: Inter, system-ui, sans-serif;
   color: #e8eefc;
@@ -58,4 +62,80 @@ button {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ============================================================
+   LOADING SPINNER
+   ============================================================ */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid rgba(91, 140, 255, 0.2);
+  border-top-color: #5b8cff;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+  pointer-events: none;
+}
+
+.toast-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: #0d1b30;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  color: #e8eefc;
+  font-size: 0.88rem;
+  pointer-events: all;
+  animation: toastIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(60px) scale(0.9); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.toast-success { border-left: 3px solid #3ad6b5; }
+.toast-error   { border-left: 3px solid #ff6b6b; }
+.toast-info    { border-left: 3px solid #5b8cff; }
+
+.toast-success .toast-icon { color: #3ad6b5; }
+.toast-error   .toast-icon { color: #ff6b6b; }
+.toast-info    .toast-icon { color: #5b8cff; }
+
+.toast-icon { flex-shrink: 0; display: flex; }
+.toast-message { flex: 1; line-height: 1.4; }
+
+.toast-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #8ea2c7;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  transition: 0.15s ease;
+}
+.toast-close:hover { color: white; background: rgba(255,255,255,0.08); }
+
+@media (max-width: 480px) {
+  .toast-container { left: 12px; right: 12px; bottom: 16px; max-width: none; }
 }
