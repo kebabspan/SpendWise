@@ -1,5 +1,5 @@
-import { Plus, RefreshCw, Pause, Play, Trash2 } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { Pencil, Plus, RefreshCw, Pause, Play, Trash2 } from 'lucide-react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { Button, Card, ColorPicker, Input, Modal, Select } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
@@ -12,9 +12,13 @@ const FREQ_LABELS: Record<string, string> = {
 
 export function RecurringPage() {
   const { user } = useAuth();
-  const { recurring, categories, accounts, addRecurring, updateRecurring, deleteRecurring } = useFinance();
+  const { recurring, categories, accounts, addRecurring, updateRecurring, deleteRecurring, processRecurring } = useFinance();
   const toast = useToast();
   const [addOpen, setAddOpen] = useState(false);
+  const [editItem, setEditItem] = useState<any | null>(null);
+
+  // Oldal megnyitásakor feldolgozza az elmaradt ismétlődőket és frissíti a listát
+  useEffect(() => { processRecurring(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeCount   = recurring.filter((r) => r.active).length;
   const monthlyTotal  = recurring
@@ -87,6 +91,9 @@ export function RecurringPage() {
                 </strong>
               </div>
               <div className="row gap-md">
+                <button className="icon-btn" title="Szerkesztés" onClick={() => setEditItem(item)}>
+                  <Pencil size={14} />
+                </button>
                 <button
                   className="icon-btn"
                   title={item.active ? 'Szüneteltetés' : 'Aktiválás'}
@@ -112,7 +119,93 @@ export function RecurringPage() {
           onSubmit={async (d: any) => { await addRecurring(d); setAddOpen(false); toast.success('Ismétlődő tranzakció létrehozva!'); }}
         />
       )}
+      {editItem && (
+        <EditRecurringModal
+          item={editItem}
+          categories={categories}
+          accounts={accounts}
+          onClose={() => setEditItem(null)}
+          onSubmit={async (d: any) => {
+            await updateRecurring(editItem.id, d);
+            setEditItem(null);
+            toast.success('Ismétlődő tranzakció frissítve.');
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function EditRecurringModal({ item, categories, accounts, onClose, onSubmit }: any) {
+  const [form, setForm] = useState({
+    name: item.name,
+    amount: String(item.amount),
+    frequency: item.frequency,
+    nextDate: item.nextDate ? item.nextDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+    categoryId: item.categoryId || '',
+    accountId: item.accountId || accounts[0]?.id || '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const relevantCats = categories.filter((c: any) => c.type === item.type);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); setError('');
+    const amount = Number(form.amount);
+    if (!amount || amount <= 0) { setError('Adjon meg érvényes összeget.'); return; }
+    setLoading(true);
+    try {
+      await onSubmit({
+        name: form.name,
+        amount,
+        frequency: form.frequency,
+        nextDate: form.nextDate,
+        categoryId: form.categoryId || undefined,
+        accountId: form.accountId || undefined,
+      });
+    } catch (err: any) { setError(err.response?.data?.message || 'Hiba történt.'); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <Modal title="Ismétlődő szerkesztése" onClose={onClose}>
+      <form className="stack-lg" onSubmit={submit}>
+        <label><span>Megnevezés</span>
+          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="pl. Albérlet, Netflix" />
+        </label>
+        <div className="grid-2">
+          <label><span>Összeg <span className="required-star">*</span></span>
+            <Input type="number" min="1" step="any" placeholder="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
+          </label>
+          <label><span>Ismétlődés</span>
+            <Select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })}>
+              <option value="DAILY">Naponta</option>
+              <option value="WEEKLY">Hetente</option>
+              <option value="MONTHLY">Havonta</option>
+              <option value="YEARLY">Évente</option>
+            </Select>
+          </label>
+        </div>
+        <div className="grid-2">
+          <label><span>Következő dátum</span>
+            <Input type="date" value={form.nextDate} onChange={(e) => setForm({ ...form, nextDate: e.target.value })} />
+          </label>
+          <label><span>Kategória</span>
+            <Select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
+              <option value="">– Nincs –</option>
+              {relevantCats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+          </label>
+        </div>
+        <label><span>Számla</span>
+          <Select value={form.accountId} onChange={(e) => setForm({ ...form, accountId: e.target.value })}>
+            {accounts.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </Select>
+        </label>
+        {error && <div className="error-box">{error}</div>}
+        <Button type="submit" loading={loading}>Mentés</Button>
+      </form>
+    </Modal>
   );
 }
 

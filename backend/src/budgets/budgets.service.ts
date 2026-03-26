@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateBudgetDto } from './budgets.dto';
+import { CreateBudgetDto, UpdateBudgetDto } from './budgets.dto';
 
 @Injectable()
 export class BudgetsService {
@@ -22,6 +22,16 @@ export class BudgetsService {
         userId: userId,
         categoryId: dto.categoryId,
       },
+    });
+  }
+
+  async update(userId: string, id: string, dto: UpdateBudgetDto) {
+    const budget = await this.prisma.budget.findFirst({ where: { id, userId } });
+    if (!budget) throw new NotFoundException('Költségkeret nem található');
+    return this.prisma.budget.update({
+      where: { id },
+      data: { limitAmount: dto.limitAmount },
+      include: { category: true },
     });
   }
 

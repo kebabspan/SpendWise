@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  BarChart3, LayoutDashboard, LogOut, Menu, PiggyBank,
+  BarChart3, LayoutDashboard, LogOut, PiggyBank,
   ReceiptText, RefreshCw, Settings, Target, UserCircle2, Wallet, X,
 } from 'lucide-react';
 import { type FormEvent, useMemo, useState } from 'react';
@@ -22,19 +22,9 @@ export function AppShell() {
   const { user, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   const isDashboard = location.pathname === '/';
-
-  const handleHamburger = () => {
-    if (window.innerWidth <= 768) {
-      setMobileSidebarOpen((v) => !v);
-    } else {
-      setDesktopCollapsed((v) => !v);
-    }
-  };
 
   const initials = useMemo(
     () => (user?.name || 'U').split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase(),
@@ -45,17 +35,10 @@ export function AppShell() {
 
   return (
     <div className="app-bg">
-      {mobileSidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setMobileSidebarOpen(false)} />
-      )}
-
-      <aside className={`sidebar ${mobileSidebarOpen ? 'mobile-open' : ''} ${desktopCollapsed ? 'desktop-collapsed' : ''}`}>
+      <aside className="sidebar">
         <div className="brand">
           <div className="brand-badge"><Wallet size={20} /></div>
           <div><strong>SpendWise</strong><p>Okos pénzkezelés</p></div>
-          <button className="icon-btn sidebar-close-btn" onClick={() => setMobileSidebarOpen(false)}>
-            <X size={16} />
-          </button>
         </div>
 
         <nav className="nav-list">
@@ -67,7 +50,6 @@ export function AppShell() {
                 to={item.to}
                 end={item.to === '/'}
                 className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => setMobileSidebarOpen(false)}
               >
                 <Icon size={18} />
                 <span>{item.label}</span>
@@ -80,12 +62,9 @@ export function AppShell() {
       <div className="content-shell">
         {isDashboard ? (
           <header className="topbar">
-            <button className="icon-btn hamburger-btn" onClick={handleHamburger}>
-              <Menu size={18} />
-            </button>
             <div className="topbar-text">
               <h1>Üdvözöljük, {user?.name?.split(' ')[0] ?? ''}!</h1>
-              <p>Kövesse nyomon pénzügyeit egy helyen.</p>
+              <p>Minden pénzügye egy helyen.</p>
             </div>
             <div className="profile-chip" onClick={() => setProfileOpen(true)}>
               <div className="avatar">{initials}</div>
@@ -98,9 +77,7 @@ export function AppShell() {
           </header>
         ) : (
           <header className="topbar topbar-slim">
-            <button className="icon-btn hamburger-btn" onClick={handleHamburger}>
-              <Menu size={18} />
-            </button>
+            <div style={{ flex: 1 }} />
             <div className="profile-chip" onClick={() => setProfileOpen(true)}>
               <div className="avatar">{initials}</div>
               <div className="profile-chip-info">

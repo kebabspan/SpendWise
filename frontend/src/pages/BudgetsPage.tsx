@@ -1,18 +1,20 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button, Card, Input, Modal, Select } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
 import { useToast } from '../context/ToastContext';
 import { formatCurrency, toNumber } from '../utils/format';
+import type { Budget } from '../context/FinanceContext';
 
 const MONTHS = ['Január','Február','Március','Április','Május','Június','Július','Augusztus','Szeptember','Október','November','December'];
 
 export function BudgetsPage() {
   const { user } = useAuth();
-  const { budgets, categories, transactions, addBudget, deleteBudget } = useFinance();
+  const { budgets, categories, transactions, addBudget, updateBudget, deleteBudget } = useFinance();
   const toast = useToast();
   const [open, setOpen] = useState(false);
+  const [editBudget, setEditBudget] = useState<Budget | null>(null);
   const now = new Date();
 
   const monthlyExpenses = useMemo(
@@ -25,7 +27,12 @@ export function BudgetsPage() {
 
   const currentMonthBudgets = budgets.filter(b => b.month === now.getMonth() + 1 && b.year === now.getFullYear());
   const totalLimit = currentMonthBudgets.reduce((s, b) => s + toNumber(b.limitAmount), 0);
-  const totalSpent = monthlyExpenses.reduce((s, t) => s + toNumber(t.amount), 0);
+  const totalSpent = currentMonthBudgets.reduce((s, b) => {
+    const spent = monthlyExpenses
+      .filter(t => t.categoryId === b.categoryId)
+      .reduce((sum, t) => sum + toNumber(t.amount), 0);
+    return s + spent;
+  }, 0);
   const totalRemaining = totalLimit - totalSpent;
 
   const handleDelete = async (id: string) => {
@@ -98,6 +105,9 @@ export function BudgetsPage() {
                     <span className={isOver ? 'negative' : ''}>
                       {formatCurrency(spent, user?.currency)} / {formatCurrency(limit, user?.currency)}
                     </span>
+                    <button className="icon-btn" title="Szerkesztés" onClick={() => setEditBudget(budget)}>
+                      <Pencil size={15} />
+                    </button>
                     <button className="icon-btn danger" onClick={() => handleDelete(budget.id)}>
                       <Trash2 size={15} />
                     </button>
@@ -128,6 +138,14 @@ export function BudgetsPage() {
           onClose={() => setOpen(false)}
           categories={categories.filter((c) => c.type === 'EXPENSE')}
           onSubmit={async (d: any) => { await addBudget(d); setOpen(false); toast.success('Költségkeret mentve.'); }}
+        />
+      )}
+
+      {editBudget && (
+        <BudgetEditModal
+          budget={editBudget}
+          onClose={() => setEditBudget(null)}
+          onSubmit={async (d: any) => { await updateBudget(editBudget.id, d); setEditBudget(null); toast.success('Keret frissítve.'); }}
         />
       )}
     </div>
@@ -206,6 +224,52 @@ function BudgetModal({ onClose, categories, onSubmit }: any) {
         </div>
         {error && <div className="error-box">{error}</div>}
         <Button type="submit" loading={loading}>Keret mentése</Button>
+      </form>
+    </Modal>
+  );
+}
+
+function BudgetEditModal({ budget, onClose, onSubmit }: { budget: Budget; onClose: () => void; onSubmit: (d: any) => Promise<void> }) {
+  const [limitAmount, setLimitAmount] = useState(String(toNumber(budget.limitAmount)));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const limit = Number(limitAmount);
+    if (!limit || limit <= 0) { setError('Adjon meg érvényes összeget.'); return; }
+    setLoading(true);
+    try {
+      await onSubmit({ limitAmount: limit });
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Hiba történt.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal title="Keret szerkesztése" onClose={onClose}>
+      <form className="stack-lg" onSubmit={submit}>
+        <p className="muted" style={{ margin: 0 }}>
+          Kategória: <strong>{budget.category.name}</strong> &nbsp;·&nbsp; {MONTHS[budget.month - 1]} {budget.year}
+        </p>
+        <label>
+          <span>Havi limit összege</span>
+          <Input
+            type="number"
+            min="1"
+            step="any"
+            placeholder="0"
+            value={limitAmount}
+            onChange={(e) => setLimitAmount(e.target.value)}
+            required
+            autoFocus
+          />
+        </label>
+        {error && <div className="error-box">{error}</div>}
+        <Button type="submit" loading={loading}>Mentés</Button>
       </form>
     </Modal>
   );

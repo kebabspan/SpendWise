@@ -1,18 +1,21 @@
-import { Plus, Target, Trash2, PiggyBank } from 'lucide-react';
+import { Pencil, Plus, Target, Trash2, PiggyBank } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
-import { Button, Card, ColorPicker, Input, Modal } from '../components/UI';
+import { Button, Card, ColorPicker, Input, Modal, Select } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { useFinance } from '../context/FinanceContext';
 import { useToast } from '../context/ToastContext';
 import { formatCurrency, toNumber } from '../utils/format';
+import type { Goal } from '../context/FinanceContext';
 
 export function GoalsPage() {
   const { user } = useAuth();
-  const { goals, addGoal, updateGoal, addToGoal, deleteGoal } = useFinance();
+  const { accounts, goals, addGoal, updateGoal, addToGoal, addTransaction, deleteGoal } = useFinance();
   const toast = useToast();
   const [addOpen, setAddOpen] = useState(false);
+  const [editGoal, setEditGoal] = useState<Goal | null>(null);
   const [addMoneyGoal, setAddMoneyGoal] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState('');
   const [addLoading, setAddLoading] = useState(false);
 
   const totalTarget = goals.reduce((s, g) => s + toNumber(g.targetAmount), 0);
@@ -22,16 +25,25 @@ export function GoalsPage() {
   const handleAddMoney = async (e: FormEvent) => {
     e.preventDefault();
     if (!addMoneyGoal || !amount) return;
+    if (!selectedAccountId) { toast.error('Válasszon számlát.'); return; }
     setAddLoading(true);
-    try { 
+    try {
+      const goalName = goals.find(g => g.id === addMoneyGoal)?.name ?? 'cél';
+      await addTransaction({
+        amount: Number(amount),
+        type: 'EXPENSE',
+        accountId: selectedAccountId,
+        date: new Date().toISOString().slice(0, 10),
+        description: `Befizetés: ${goalName}`,
+      });
       await addToGoal(addMoneyGoal, Number(amount));
       setAddMoneyGoal(null);
       setAmount('');
+      setSelectedAccountId('');
       toast.success('Befizetés rögzítve!');
     } catch {
       toast.error('Befizetés sikertelen.');
-    }
-    finally { setAddLoading(false); }
+    } finally { setAddLoading(false); }
   };
 
   const handleDelete = async (id: string) => {
@@ -48,7 +60,7 @@ export function GoalsPage() {
       <div className="page-header">
         <div>
           <h2>Pénzügyi célok</h2>
-          <p className="muted">Tűzzön ki célokat és kövesse nyomon az előrehaladást.</p>
+          <p className="muted">Pénzügyi céljai kezelése és nyomon követése.</p>
         </div>
         <Button onClick={() => setAddOpen(true)}><Plus size={16} /> Új cél</Button>
       </div>
@@ -92,6 +104,7 @@ export function GoalsPage() {
                   )}
                 </div>
                 {done && <span className="goal-done-badge">✓ Teljesítve</span>}
+                <button className="icon-btn" title="Szerkesztés" onClick={() => setEditGoal(goal)}><Pencil size={14} /></button>
                 <button className="icon-btn danger" onClick={() => handleDelete(goal.id)}><Trash2 size={14} /></button>
               </div>
 
@@ -112,7 +125,7 @@ export function GoalsPage() {
                 <Button
                   className="btn-secondary"
                   style={{ marginTop: 12, width: '100%' }}
-                  onClick={() => { setAddMoneyGoal(goal.id); setAmount(''); }}
+                  onClick={() => { setAddMoneyGoal(goal.id); setAmount(''); setSelectedAccountId(accounts[0]?.id || ''); }}
                 >
                   <Plus size={14} /> Befizetés
                 </Button>
@@ -122,7 +135,20 @@ export function GoalsPage() {
         })}
       </div>
 
-      {addOpen && <GoalFormModal onClose={() => setAddOpen(false)} onSubmit={async (d) => { await addGoal(d); setAddOpen(false); toast.success('Cél létrehozva!'); }} />}
+      {addOpen && (
+        <GoalFormModal
+          onClose={() => setAddOpen(false)}
+          onSubmit={async (d) => { await addGoal(d); setAddOpen(false); toast.success('Cél létrehozva!'); }}
+        />
+      )}
+
+      {editGoal && (
+        <GoalFormModal
+          initial={editGoal}
+          onClose={() => setEditGoal(null)}
+          onSubmit={async (d) => { await updateGoal(editGoal.id, d); setEditGoal(null); toast.success('Cél frissítve!'); }}
+        />
+      )}
 
       {addMoneyGoal && (
         <Modal title="Befizetés a célba" onClose={() => setAddMoneyGoal(null)}>
@@ -130,7 +156,17 @@ export function GoalsPage() {
             <label><span>Összeg</span>
               <Input type="number" min="1" step="any" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} required autoFocus />
             </label>
-            <Button type="submit" loading={addLoading}>Befizetés rögzítése</Button>
+            <label><span>Forrás számla <span className="required-star">*</span></span>
+              {accounts.length === 0 ? (
+                <p className="muted" style={{ marginTop: 6, fontSize: '0.85rem' }}>Nincs számla. Előbb hozzon létre egyet a Tranzakciók oldalon.</p>
+              ) : (
+                <Select value={selectedAccountId} onChange={(e) => setSelectedAccountId(e.target.value)} required>
+                  <option value="">– Válasszon számlát –</option>
+                  {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </Select>
+              )}
+            </label>
+            <Button type="submit" loading={addLoading} disabled={accounts.length === 0}>Befizetés rögzítése</Button>
           </form>
         </Modal>
       )}
@@ -138,9 +174,23 @@ export function GoalsPage() {
   );
 }
 
-function GoalFormModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (d: any) => Promise<void> }) {
-  const [form, setForm] = useState({ name: '', targetAmount: '', deadline: '', color: '#5b8cff' });
+function GoalFormModal({
+  onClose,
+  onSubmit,
+  initial,
+}: {
+  onClose: () => void;
+  onSubmit: (d: any) => Promise<void>;
+  initial?: Goal;
+}) {
+  const [form, setForm] = useState({
+    name: initial?.name ?? '',
+    targetAmount: initial ? String(toNumber(initial.targetAmount)) : '',
+    deadline: initial?.deadline ? initial.deadline.slice(0, 10) : '',
+    color: initial?.color ?? '#5b8cff',
+  });
   const [loading, setLoading] = useState(false);
+  const isEdit = !!initial;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setLoading(true);
@@ -155,7 +205,7 @@ function GoalFormModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (
   };
 
   return (
-    <Modal title="Új pénzügyi cél" onClose={onClose}>
+    <Modal title={isEdit ? 'Cél szerkesztése' : 'Új pénzügyi cél'} onClose={onClose}>
       <form className="stack-lg" onSubmit={submit}>
         <label><span>Cél neve</span>
           <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="pl. Nyári vakáció" />
@@ -171,7 +221,7 @@ function GoalFormModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (
         <label><span>Szín</span>
           <ColorPicker value={form.color} onChange={(c) => setForm({ ...form, color: c })} />
         </label>
-        <Button type="submit" loading={loading}>Cél létrehozása</Button>
+        <Button type="submit" loading={loading}>{isEdit ? 'Mentés' : 'Cél létrehozása'}</Button>
       </form>
     </Modal>
   );

@@ -1,70 +1,62 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { INestApplication } from '@nestjs/common';
+
+function setupHealthCheck(app: INestApplication) {
+  const httpAdapter = app.getHttpAdapter();
+  httpAdapter.get('/api/health', (_req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+}
 
 async function bootstrap() {
-  // A <NestExpressApplication> kell a setStaticAssets-hez (uploads mappa)
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create(AppModule, { logger: ['log', 'warn', 'error'] });
 
-  // --- Swagger (API Dokumentáció) Beállítása ---
+  // Swagger
   const config = new DocumentBuilder()
-    .setTitle('Pénzügyi Tracker API')
-    .setDescription('A backend alkalmazás teljes dokumentációja és tesztfelülete.')
+    .setTitle('SpendWise API')
+    .setDescription('SpendWise backend API')
     .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Másold be a bejelentkezéskor kapott access_token-t!',
-        in: 'header',
-      },
-      'access-token', // Ez a név lesz a hivatkozási alap a kontrollereken (@ApiBearerAuth)
-    )
+    .addBearerAuth()
     .build();
+  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config));
 
-  const document = SwaggerModule.createDocument(app, config);
-  // Elérhető: http://localhost:3000/api/docs
-  SwaggerModule.setup('api/docs', app, document);
+  // CORS – localhost + helyi hálózat (LAN: 192.168.x.x, Docker: 172.x.x.x, VPN: 10.x.x.x)
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        /^http:\/\/localhost(:\d+)?$/.test(origin) ||
+        /^http:\/\/(192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  });
 
-  // --- Globális Beállítások ---
-  
-  // CORS: engedélyezzük a frontendnek (pl. Vite/React) az elérést
-  app.enableCors({ origin: 'http://localhost:5173' });
-  
-  // Biztonságos leállás figyelése
-  app.enableShutdownHooks();
-
-  // Minden végpont 'api/' prefixszel fog kezdődni
   app.setGlobalPrefix('api');
 
-  // Globális validáció a DTO-k alapján
+  // Healthcheck (a globális prefix előtt kell, ezért itt regisztráljuk)
+  setupHealthCheck(app);
+
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,               // Kiszedi a felesleges mezőket, amik nincsenek a DTO-ban
-      transform: true,               // Automatikusan átalakítja a típusokat (pl. string -> number)
-      forbidNonWhitelisted: true,    // Hibát dob, ha ismeretlen mező jön a kérésben
-      transformOptions: {
-        enableImplicitConversion: true, // Automatikus konverzió (pl. query paramétereknél)
-      },
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: false,
+      transformOptions: { enableImplicitConversion: true },
     }),
   );
 
-  // --- Statikus fájlok kiszolgálása ---
-  // Hozd létre az 'uploads' mappát a projekt gyökerében!
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
-    prefix: '/uploads',
-  });
-
-  // Szerver indítása
-  const port = process.env.PORT ?? 3000;
+  const port = process.env.PORT ?? 3001;
   await app.listen(port);
-  
-  console.log(`🚀 A szerver fut: http://localhost:${port}/api`);
-  console.log(`📖 API Dokumentáció: http://localhost:${port}/api/docs`);
+  console.log(`Backend:     http://localhost:${port}/api`);
+  console.log(`Swagger:     http://localhost:${port}/api/docs`);
+  console.log(`Healthcheck: http://localhost:${port}/api/health`);
 }
 bootstrap();

@@ -11,7 +11,7 @@ export function AccountsPage() {
   const { accounts, transactions, addAccount, updateAccount, deleteAccount } = useFinance();
   const toast = useToast();
   const [addOpen, setAddOpen] = useState(false);
-  const [editAccount, setEditAccount] = useState<{ id: string; name: string; color: string } | null>(null);
+  const [editAccount, setEditAccount] = useState<{ id: string; name: string; color: string; balance: number } | null>(null);
 
   const totalBalance = accounts.reduce((s, a) => s + toNumber(a.balance), 0);
 
@@ -44,7 +44,7 @@ export function AccountsPage() {
       <div className="page-header">
         <div>
           <h2>Számlák</h2>
-          <p className="muted">Kezelje bankszámláit, készpénzét és egyéb pénzügyi eszközeit.</p>
+          <p className="muted">Átláthatóan kezelheti bankszámláit, készpénzét és más pénzügyeit.</p>
         </div>
         <Button onClick={() => setAddOpen(true)}><Plus size={16} /> Új számla</Button>
       </div>
@@ -78,7 +78,7 @@ export function AccountsPage() {
                   <Wallet size={20} />
                 </div>
                 <div className="account-card__actions">
-                  <button className="icon-btn" onClick={() => setEditAccount({ id: account.id, name: account.name, color: account.color || '#5b8cff' })}>
+                  <button className="icon-btn" onClick={() => setEditAccount({ id: account.id, name: account.name, color: account.color || '#5b8cff', balance: toNumber(account.balance) })}>
                     <Pencil size={14} />
                   </button>
                   <button className="icon-btn danger" onClick={() => handleDelete(account.id)}>
@@ -134,19 +134,19 @@ export function AccountsPage() {
 
 function AccountFormModal({ title, initial, onClose, onSubmit }: {
   title: string;
-  initial?: { name: string; color: string };
+  initial?: { name: string; color: string; balance?: number };
   onClose: () => void;
   onSubmit: (data: { name: string; balance?: number; color: string }) => Promise<void>;
 }) {
   const [name, setName] = useState(initial?.name || '');
-  const [balance, setBalance] = useState('');
+  const [balance, setBalance] = useState(initial?.balance !== undefined ? String(initial.balance) : '');
   const [color, setColor] = useState(initial?.color || '#5b8cff');
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try { await onSubmit({ name, balance: balance ? Number(balance) : undefined, color }); }
+    try { await onSubmit({ name, balance: balance !== '' ? Number(balance) : undefined, color }); }
     finally { setLoading(false); }
   };
 
@@ -156,11 +156,9 @@ function AccountFormModal({ title, initial, onClose, onSubmit }: {
         <label><span>Számla neve</span>
           <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder="pl. OTP Bankszámla" />
         </label>
-        {!initial && (
-          <label><span>Nyitó egyenleg</span>
-            <Input type="number" min="0" step="any" placeholder="0" value={balance} onChange={(e) => setBalance(e.target.value)} />
-          </label>
-        )}
+        <label><span>{initial ? 'Aktuális egyenleg' : 'Nyitó egyenleg'}</span>
+          <Input type="number" step="any" placeholder="0" value={balance} onChange={(e) => setBalance(e.target.value)} />
+        </label>
         <label><span>Szín</span>
           <ColorPicker value={color} onChange={setColor} />
         </label>

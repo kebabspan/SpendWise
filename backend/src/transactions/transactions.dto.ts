@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsDateString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsDateString, Min } from 'class-validator';
 
 enum TransactionType {
   EXPENSE = 'EXPENSE',
@@ -9,11 +9,12 @@ enum TransactionType {
 export class CreateTransactionDto {
   @IsNumber()
   @IsNotEmpty()
+  @Min(0.01)
   amount: number;
 
   @IsString()
   @IsOptional()
-  description?: string; // Átnevezve 'note'-ról, hogy egyezzen a kéréseddel
+  description?: string;
 
   @IsString()
   @IsOptional()
@@ -32,10 +33,46 @@ export class CreateTransactionDto {
   categoryId?: string;
 
   @IsString()
-  @IsNotEmpty() // Ez kötelező, mert tudnunk kell, melyik számlát módosítjuk
-  accountId: string; // Átnevezve 'fromAccountId'-ról az egyszerűség kedvéért
+  @IsNotEmpty()
+  accountId: string;
 
   @IsString()
   @IsOptional()
-  toAccountId?: string; // Csak TRANSFER esetén kellhet
+  toAccountId?: string;
+}
+
+// Külön DTO a PATCH-hez: minden mező opcionális, nincs @IsNotEmpty() kényszer
+export class UpdateTransactionDto {
+  @IsNumber()
+  @IsOptional()
+  @Min(0.01)
+  amount?: number;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  place?: string;
+
+  @IsDateString()
+  @IsOptional()
+  date?: string;
+
+  @IsEnum(TransactionType)
+  @IsOptional()
+  type?: TransactionType;
+
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
+
+  @IsString()
+  @IsOptional()
+  accountId?: string;
+
+  @IsString()
+  @IsOptional()
+  toAccountId?: string;
 }

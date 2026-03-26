@@ -36,6 +36,7 @@ interface FinanceContextValue {
   updateCategory: (id: string, p: { name?: string; color?: string }) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   addBudget: (p: { limitAmount: number; month: number; year: number; categoryId: string }) => Promise<void>;
+  updateBudget: (id: string, p: { limitAmount: number }) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
   addTransaction: (p: AddTransactionPayload) => Promise<void>;
   updateTransaction: (id: string, p: Partial<AddTransactionPayload>) => Promise<void>;
@@ -47,6 +48,7 @@ interface FinanceContextValue {
   addRecurring: (p: { name: string; amount: number; type: string; frequency: string; nextDate: string; categoryId?: string; accountId?: string }) => Promise<void>;
   updateRecurring: (id: string, p: { active?: boolean; nextDate?: string; amount?: number }) => Promise<void>;
   deleteRecurring: (id: string) => Promise<void>;
+  processRecurring: () => Promise<void>;
 }
 
 const FinanceContext = createContext<FinanceContextValue | undefined>(undefined);
@@ -75,7 +77,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { refreshAll(); }, [refreshAll]);
+  // Alkalmazás indulásakor: feldolgozza az esedékes ismétlődő tranzakciókat,
+  // majd betölti az összes adatot (hogy a frissített egyenlegek is megjelenjenek).
+  useEffect(() => {
+    api.post('/recurring/process').catch(() => {}).finally(() => refreshAll());
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addAccount = useCallback(async (p: any) => { await api.post('/accounts', p); await refreshAll(); }, [refreshAll]);
   const updateAccount = useCallback(async (id: string, p: any) => { await api.patch(`/accounts/${id}`, p); await refreshAll(); }, [refreshAll]);
@@ -84,6 +90,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const updateCategory = useCallback(async (id: string, p: any) => { await api.patch(`/categories/${id}`, p); await refreshAll(); }, [refreshAll]);
   const deleteCategory = useCallback(async (id: string) => { await api.delete(`/categories/${id}`); await refreshAll(); }, [refreshAll]);
   const addBudget = useCallback(async (p: any) => { await api.post('/budgets', p); await refreshAll(); }, [refreshAll]);
+  const updateBudget = useCallback(async (id: string, p: any) => { await api.patch(`/budgets/${id}`, p); await refreshAll(); }, [refreshAll]);
   const deleteBudget = useCallback(async (id: string) => { await api.delete(`/budgets/${id}`); await refreshAll(); }, [refreshAll]);
   const addTransaction = useCallback(async (p: any) => { await api.post('/transactions', p); await refreshAll(); }, [refreshAll]);
   const updateTransaction = useCallback(async (id: string, p: any) => { await api.patch(`/transactions/${id}`, p); await refreshAll(); }, [refreshAll]);
@@ -92,19 +99,28 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const updateGoal = useCallback(async (id: string, p: any) => { await api.patch(`/goals/${id}`, p); await refreshAll(); }, [refreshAll]);
   const addToGoal = useCallback(async (id: string, amount: number) => { await api.post(`/goals/${id}/add`, { amount }); await refreshAll(); }, [refreshAll]);
   const deleteGoal = useCallback(async (id: string) => { await api.delete(`/goals/${id}`); await refreshAll(); }, [refreshAll]);
-  const addRecurring = useCallback(async (p: any) => { await api.post('/recurring', p); await refreshAll(); }, [refreshAll]);
+  const addRecurring = useCallback(async (p: any) => {
+    await api.post('/recurring', p);
+    // Azonnal feldolgozza ha a kezdő dátum ma vagy korábban van
+    await api.post('/recurring/process').catch(() => {});
+    await refreshAll();
+  }, [refreshAll]);
   const updateRecurring = useCallback(async (id: string, p: any) => { await api.patch(`/recurring/${id}`, p); await refreshAll(); }, [refreshAll]);
   const deleteRecurring = useCallback(async (id: string) => { await api.delete(`/recurring/${id}`); await refreshAll(); }, [refreshAll]);
+  const processRecurring = useCallback(async () => {
+    await api.post('/recurring/process').catch(() => {});
+    await refreshAll();
+  }, [refreshAll]);
 
   return (
     <FinanceContext.Provider value={{
       accounts, categories, budgets, transactions, goals, recurring, loading,
       addAccount, updateAccount, deleteAccount,
       addCategory, updateCategory, deleteCategory,
-      addBudget, deleteBudget,
+      addBudget, updateBudget, deleteBudget,
       addTransaction, updateTransaction, deleteTransaction,
       addGoal, updateGoal, addToGoal, deleteGoal,
-      addRecurring, updateRecurring, deleteRecurring,
+      addRecurring, updateRecurring, deleteRecurring, processRecurring,
     }}>
       {children}
     </FinanceContext.Provider>

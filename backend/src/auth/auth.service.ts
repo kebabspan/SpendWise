@@ -12,31 +12,34 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    // Ellenőrizzük, hogy létezik-e már a felhasználó
-    const userExists = await this.prisma.user.findUnique({
+    const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-
-    if (userExists) {
+    if (existing) {
       throw new BadRequestException('Ez az e-mail cím már foglalt.');
     }
 
-    // Jelszó titkosítása
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Felhasználó létrehozása (a sémád szerinti mezőkkel)
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         password: hashedPassword,
         name: dto.name,
-        currency: dto.currency || 'HUF',
+        currency: dto.currency ?? 'HUF',
       },
     });
 
+    const payload = { sub: user.id, email: user.email };
     return {
-      message: 'Sikeres regisztráció!',
-      userId: user.id,
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        currency: user.currency,
+        imageUrl: user.imageUrl,
+      },
     };
   }
 
@@ -44,26 +47,20 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
+    if (!user) throw new UnauthorizedException('Hibás e-mail vagy jelszó.');
 
-    if (!user) {
-      throw new UnauthorizedException('Hibás e-mail vagy jelszó.');
-    }
+    const valid = await bcrypt.compare(dto.password, user.password);
+    if (!valid) throw new UnauthorizedException('Hibás e-mail vagy jelszó.');
 
-    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Hibás e-mail vagy jelszó.');
-    }
-
-    // JWT Token generálása
     const payload = { sub: user.id, email: user.email };
-    
     return {
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
+        currency: user.currency,
+        imageUrl: user.imageUrl,
       },
     };
   }

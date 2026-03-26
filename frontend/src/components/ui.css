@@ -92,7 +92,7 @@
   color: #ffd4d4;
 }
 
-label span {
+label > span {
   display: block;
   margin-bottom: 8px;
   color: #9eb0d0;

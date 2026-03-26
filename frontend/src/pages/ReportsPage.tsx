@@ -2,7 +2,7 @@ import { AlertTriangle, Download, TrendingDown, TrendingUp } from 'lucide-react'
 import { useMemo } from 'react';
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer,
-  Tooltip, XAxis, YAxis, ReferenceLine,
+  Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { Button, Card } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +11,7 @@ import { formatCurrency, toNumber } from '../utils/format';
 
 export function ReportsPage() {
   const { user } = useAuth();
-  const { budgets, transactions, accounts } = useFinance();
+  const { budgets, transactions } = useFinance();
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear  = now.getFullYear();
@@ -37,33 +37,6 @@ export function ReportsPage() {
     a.href = url; a.download = `spendwise_${now.toISOString().slice(0,10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
   };
-
-  // --- Net Worth (utolsó 12 hónap) ---
-  const netWorthData = useMemo(() => {
-    return Array.from({ length: 12 }).map((_, i) => {
-      const date = new Date(currentYear, currentMonth - (11 - i), 1);
-      const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
-      // Számoljuk ki az egyenleget úgy, hogy visszafelé nézzük a tranzakciókat
-      const txUpToMonth = transactions.filter((t) => new Date(t.date) <= endOfMonth);
-      const balance = txUpToMonth.reduce((s, t) => {
-        if (t.type === 'INCOME') return s + toNumber(t.amount);
-        if (t.type === 'EXPENSE') return s - toNumber(t.amount);
-        return s;
-      }, 0);
-      // Hozzáadjuk a nyitó egyenlegeket (amelyek nem tranzakcióból jönnek)
-      const openingBalance = accounts.reduce((s, a) => s + toNumber(a.balance), 0);
-      const currentNetChange = transactions.reduce((s, t) => {
-        if (t.type === 'INCOME') return s + toNumber(t.amount);
-        if (t.type === 'EXPENSE') return s - toNumber(t.amount);
-        return s;
-      }, 0);
-      const approxBalance = openingBalance - currentNetChange + balance;
-      return {
-        label: date.toLocaleDateString('hu-HU', { month: 'short', year: '2-digit' }),
-        nettóVagyon: Math.round(approxBalance),
-      };
-    });
-  }, [transactions, accounts]);
 
   // --- Előrejelzés ---
   const forecast = useMemo(() => {
@@ -144,7 +117,7 @@ export function ReportsPage() {
       <div className="page-header">
         <div>
           <h2>Riportok & Elemzés</h2>
-          <p className="muted">Automatikus megfigyelések, előrejelzés és vagyonkövetés.</p>
+          <p className="muted">Automatikus megfigyelések és kiadás-előrejelzés.</p>
         </div>
         <Button className="btn-secondary" onClick={exportCSV}><Download size={16} /> CSV export</Button>
       </div>
@@ -187,35 +160,6 @@ export function ReportsPage() {
             ? `✅ Az eddigi tempóval kb. ${formatCurrency(Math.abs(forecast.diff), user?.currency)}-vel kevesebbet fog költeni az átlagosnál.`
             : '👍 A kiadások az átlagos szinten mozognak.'}
         </p>
-      </Card>
-
-      {/* Net Worth grafikon */}
-      <Card className="chart-card">
-        <div className="section-head">
-          <div>
-            <h3>Nettó vagyon alakulása</h3>
-            <p>Az utolsó 12 hónap becsült vagyonkövetése a tranzakciók alapján.</p>
-          </div>
-        </div>
-        <ResponsiveContainer width="100%" height={280}>
-          <AreaChart data={netWorthData}>
-            <defs>
-              <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#5b8cff" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#5b8cff" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-            <XAxis dataKey="label" tick={{ fill: '#8ea2c7', fontSize: 11 }} />
-            <YAxis tick={{ fill: '#8ea2c7', fontSize: 11 }} />
-            <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" />
-            <Tooltip
-              contentStyle={{ background: '#101b30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
-              formatter={(v) => formatCurrency(v as number, user?.currency)}
-            />
-            <Area type="monotone" dataKey="nettóVagyon" stroke="#5b8cff" fill="url(#nwFill)" strokeWidth={2.5} />
-          </AreaChart>
-        </ResponsiveContainer>
       </Card>
 
       {/* Szöveges riportok */}

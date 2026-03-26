@@ -18,6 +18,9 @@ interface EditTxState {
   place: string;
   date: string;
   categoryId: string;
+  amount: number;
+  type: string;
+  accountId: string;
 }
 
 export function TransactionsPage() {
@@ -46,10 +49,11 @@ export function TransactionsPage() {
     );
   }), [transactions, filters]);
 
-  const breakdown = filtered.filter((t) => t.type === 'EXPENSE').reduce<Array<{ name: string; value: number }>>((acc, t) => {
+  const breakdown = filtered.filter((t) => t.type === 'EXPENSE').reduce<Array<{ name: string; value: number; color: string }>>((acc, t) => {
     const name = t.category?.name ?? 'Egyéb';
     const ex = acc.find((e) => e.name === name);
-    if (ex) ex.value += toNumber(t.amount); else acc.push({ name, value: toNumber(t.amount) });
+    if (ex) ex.value += toNumber(t.amount);
+    else acc.push({ name, value: toNumber(t.amount), color: t.category?.color || COLORS[acc.length % COLORS.length] });
     return acc;
   }, []);
 
@@ -61,7 +65,7 @@ export function TransactionsPage() {
   return (
     <div className="stack-xl">
       <div className="page-header">
-        <div><h2>Tranzakciók</h2><p className="muted">Rögzítse és tekintse át pénzforgalmát.</p></div>
+        <div><h2>Tranzakciók</h2><p className="muted">Rögzítse és kövesse nyomon tranzakcióit.</p></div>
         <div className="row wrap gap-md">
           <Button onClick={() => setTxModal(true)}><Plus size={16} /> Új tranzakció</Button>
           <Button className="btn-secondary" onClick={() => setCategoryModal(true)}>Kategóriák</Button>
@@ -132,7 +136,7 @@ export function TransactionsPage() {
                     </td>
                     <td>
                       <div className="row gap-md">
-                        <button className="icon-btn" title="Szerkesztés" onClick={() => setEditTx({ id: item.id, note: item.note || '', place: item.place || '', date: item.date.slice(0,10), categoryId: item.categoryId || '' })}>
+                        <button className="icon-btn" title="Szerkesztés" onClick={() => setEditTx({ id: item.id, note: item.note || '', place: item.place || '', date: item.date.slice(0,10), categoryId: item.categoryId || '', amount: toNumber(item.amount), type: item.type, accountId: item.fromAccountId || '' })}>
                           <Pencil size={14} />
                         </button>
                         <button className="icon-btn danger" title="Törlés" onClick={() => handleDelete(item.id)}>
@@ -155,9 +159,15 @@ export function TransactionsPage() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
                 <XAxis dataKey="name" tick={{ fill: '#8ea2c7', fontSize: 11 }} />
                 <YAxis tick={{ fill: '#8ea2c7', fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: '#101b30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }} formatter={(v) => formatCurrency(v as number, user?.currency)} />
-                <Bar dataKey="value" radius={[8,8,0,0]}>
-                  {breakdown.map((e, i) => <Cell key={e.name} fill={COLORS[i % COLORS.length]} />)}
+                <Tooltip
+                  contentStyle={{ background: '#101b30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#dce6f8' }}
+                  labelStyle={{ color: '#9eb0d0' }}
+                  itemStyle={{ color: '#dce6f8' }}
+                  cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                  formatter={(v, _name, entry) => [formatCurrency(v as number, user?.currency), entry.payload?.name ?? '']}
+                />
+                <Bar dataKey="value" radius={[8,8,0,0]} cursor={{ fill: 'rgba(255,255,255,0.04)' }}>
+                  {breakdown.map((e) => <Cell key={e.name} fill={e.color} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -170,7 +180,7 @@ export function TransactionsPage() {
       {txModal && <TransactionModal onClose={() => setTxModal(false)} onSubmit={async (p: any) => { await addTransaction(p); toast.success('Tranzakció rögzítve!'); }} accounts={accounts} categories={categories} currency={user?.currency} />}
       {categoryModal && <CategoryManagerModal onClose={() => setCategoryModal(false)} categories={categories} onAdd={async (p: any) => { await addCategory(p); toast.success('Kategória létrehozva!'); }} onUpdate={async (id: string, p: any) => { await updateCategory(id, p); toast.success('Kategória frissítve.'); }} onDelete={async (id: string) => { await deleteCategory(id); toast.success('Kategória törölve.'); }} />}
       {accountModal && <AccountModal onClose={() => setAccountModal(false)} onSubmit={async (p: any) => { await addAccount(p); toast.success('Számla létrehozva!'); }} />}
-      {editTx && <EditTransactionModal tx={editTx} categories={categories} onClose={() => setEditTx(null)} onSubmit={async (data: any) => { await updateTransaction(editTx.id, data); toast.success('Tranzakció frissítve.'); setEditTx(null); }} />}
+      {editTx && <EditTransactionModal tx={editTx} categories={categories} accounts={accounts} onClose={() => setEditTx(null)} onSubmit={async (data: any) => { await updateTransaction(editTx.id, data); toast.success('Tranzakció frissítve.'); setEditTx(null); }} />}
     </div>
   );
 }
@@ -208,22 +218,24 @@ function TransactionModal({ onClose, onSubmit, accounts, categories, currency: _
               <option value="EXPENSE">Kiadás</option><option value="INCOME">Bevétel</option><option value="TRANSFER">Átutalás</option>
             </Select>
           </label>
-          <label><span>Összeg</span>
+          <label><span>Összeg <span className="required-star">*</span></span>
             <Input type="number" min="0.01" step="any" placeholder="0" value={form.amount} onChange={(e) => setForm({...form, amount:e.target.value})} required />
           </label>
         </div>
         <div className="grid-2">
-          <label><span>{form.type==='TRANSFER'?'Forrás számla':'Számla'}</span>
+          <label><span>{form.type==='TRANSFER'?'Forrás számla':'Számla'} <span className="required-star">*</span></span>
             {accounts.length === 0
               ? <p className="muted" style={{ marginTop:6, fontSize:'0.85rem' }}>Nincs számla. Előbb hozzon létre egyet.</p>
               : <Select value={form.accountId} onChange={(e) => setForm({...form, accountId:e.target.value})}>{accounts.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}</Select>}
           </label>
           {form.type==='TRANSFER' ? (
             <label><span>Cél számla</span>
-              <Select value={form.toAccountId} onChange={(e) => setForm({...form, toAccountId:e.target.value})}>
-                <option value="">– Válasszon –</option>
-                {accounts.filter((a: any) => a.id !== form.accountId).map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </Select>
+              {accounts.length < 2
+                ? <p className="muted" style={{ marginTop:6, fontSize:'0.85rem', color:'#ffc857' }}>⚠️ Átutaláshoz legalább 2 számla szükséges.</p>
+                : <Select value={form.toAccountId} onChange={(e) => setForm({...form, toAccountId:e.target.value})}>
+                    <option value="">– Válasszon –</option>
+                    {accounts.filter((a: any) => a.id !== form.accountId).map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </Select>}
             </label>
           ) : (
             <label><span>Kategória</span>
@@ -239,6 +251,11 @@ function TransactionModal({ onClose, onSubmit, accounts, categories, currency: _
           <label><span>Helyszín</span><Input value={form.place} onChange={(e) => setForm({...form, place:e.target.value})} placeholder="pl. Tesco" /></label>
         </div>
         <label><span>Megjegyzés</span><Input value={form.description} onChange={(e) => setForm({...form, description:e.target.value})} placeholder="pl. Heti bevásárlás" /></label>
+        {form.type === 'EXPENSE' && !form.categoryId && (
+          <p style={{ fontSize:'0.82rem', color:'#ffc857', margin:0 }}>
+            💡 Kategória nélküli kiadások nem számítanak be a keretkövetésbe.
+          </p>
+        )}
         {error && <div className="error-box">{error}</div>}
         <Button type="submit" loading={loading} disabled={accounts.length === 0}>Mentés</Button>
       </form>
@@ -246,29 +263,66 @@ function TransactionModal({ onClose, onSubmit, accounts, categories, currency: _
   );
 }
 
-function EditTransactionModal({ tx, categories, onClose, onSubmit }: any) {
-  const [form, setForm] = useState({ note: tx.note, place: tx.place, date: tx.date, categoryId: tx.categoryId });
+function EditTransactionModal({ tx, categories, accounts, onClose, onSubmit }: any) {
+  const [form, setForm] = useState({
+    note: tx.note, place: tx.place, date: tx.date,
+    categoryId: tx.categoryId, amount: String(tx.amount),
+    type: tx.type, accountId: tx.accountId,
+  });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const relevantCats = categories.filter((c: any) => c.type === form.type || form.type === 'TRANSFER');
   const submit = async (e: FormEvent) => {
-    e.preventDefault(); setLoading(true);
-    try { await onSubmit({ description: form.note, place: form.place, date: form.date, categoryId: form.categoryId || undefined }); }
+    e.preventDefault(); setError('');
+    const amount = Number(form.amount);
+    if (!amount || amount <= 0) { setError('Adjon meg érvényes összeget.'); return; }
+    setLoading(true);
+    try {
+      await onSubmit({
+        description: form.note, place: form.place, date: form.date,
+        categoryId: form.categoryId || undefined, amount,
+        type: form.type, accountId: form.accountId || undefined,
+      });
+    }
+    catch (err: any) { setError(err.response?.data?.message || 'Hiba történt.'); }
     finally { setLoading(false); }
   };
   return (
     <Modal title="Tranzakció szerkesztése" onClose={onClose}>
       <form className="stack-lg" onSubmit={submit}>
-        <p className="muted" style={{fontSize:'0.85rem'}}>Az összeg és típus nem módosítható.</p>
         <div className="grid-2">
-          <label><span>Dátum</span><Input type="date" value={form.date} onChange={(e) => setForm({...form, date:e.target.value})} /></label>
+          <label><span>Típus</span>
+            <Select value={form.type} onChange={(e) => setForm({...form, type: e.target.value, categoryId: ''})}>
+              <option value="EXPENSE">Kiadás</option>
+              <option value="INCOME">Bevétel</option>
+              <option value="TRANSFER">Átutalás</option>
+            </Select>
+          </label>
+          <label><span>Összeg <span className="required-star">*</span></span>
+            <Input type="number" min="0.01" step="any" value={form.amount} onChange={(e) => setForm({...form, amount:e.target.value})} required />
+          </label>
+        </div>
+        <div className="grid-2">
+          <label><span>Számla <span className="required-star">*</span></span>
+            <Select value={form.accountId} onChange={(e) => setForm({...form, accountId: e.target.value})}>
+              {accounts.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </Select>
+          </label>
+          <label><span>Dátum</span>
+            <Input type="date" value={form.date} onChange={(e) => setForm({...form, date:e.target.value})} />
+          </label>
+        </div>
+        {form.type !== 'TRANSFER' && (
           <label><span>Kategória</span>
             <Select value={form.categoryId} onChange={(e) => setForm({...form, categoryId:e.target.value})}>
               <option value="">– Nincs –</option>
-              {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {relevantCats.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </Select>
           </label>
-        </div>
+        )}
         <label><span>Helyszín</span><Input value={form.place} onChange={(e) => setForm({...form, place:e.target.value})} placeholder="pl. Tesco" /></label>
         <label><span>Megjegyzés</span><Input value={form.note} onChange={(e) => setForm({...form, note:e.target.value})} placeholder="pl. Heti bevásárlás" /></label>
+        {error && <div className="error-box">{error}</div>}
         <Button type="submit" loading={loading}>Mentés</Button>
       </form>
     </Modal>

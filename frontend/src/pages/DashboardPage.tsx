@@ -59,6 +59,7 @@ export function DashboardPage() {
         const items = transactions.filter((t) => { const td = new Date(t.date); return td >= start && td <= end; });
         return {
           label: date.toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' }),
+          fullLabel: date.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' }),
           bevétel: items.filter((t) => t.type === 'INCOME').reduce((s, t) => s + toNumber(t.amount), 0),
           kiadás: items.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + toNumber(t.amount), 0),
         };
@@ -90,6 +91,7 @@ export function DashboardPage() {
       });
       return {
         label: date.toLocaleDateString('hu-HU', { month: 'short' }),
+        fullLabel: date.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long' }),
         bevétel: items.filter((t) => t.type === 'INCOME').reduce((s, t) => s + toNumber(t.amount), 0),
         kiadás: items.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + toNumber(t.amount), 0),
       };
@@ -98,11 +100,11 @@ export function DashboardPage() {
 
   const categoryBreakdown = monthlyTransactions
     .filter((t) => t.type === 'EXPENSE')
-    .reduce<Array<{ name: string; value: number }>>((acc, t) => {
+    .reduce<Array<{ name: string; value: number; color: string }>>((acc, t) => {
       const name = t.category?.name ?? 'Egyéb';
       const ex = acc.find((e) => e.name === name);
       if (ex) ex.value += toNumber(t.amount);
-      else acc.push({ name, value: toNumber(t.amount) });
+      else acc.push({ name, value: toNumber(t.amount), color: t.category?.color || COLORS[acc.length % COLORS.length] });
       return acc;
     }, []);
 
@@ -123,8 +125,8 @@ export function DashboardPage() {
 
       <div className="grid-kpis">
         <MetricCard label="Teljes egyenleg" value={formatCurrency(totalBalance, user?.currency)} accent="blue" />
-        <MetricCard label="Havi bevétel" value={formatCurrency(monthlyIncome, user?.currency)} accent="green" />
-        <MetricCard label="Havi kiadás" value={formatCurrency(monthlyExpenses, user?.currency)} accent="red" />
+        <MetricCard label="Havi bevétel" value={`+${formatCurrency(monthlyIncome, user?.currency)}`} accent="green" />
+        <MetricCard label="Havi kiadás" value={`-${formatCurrency(monthlyExpenses, user?.currency)}`} accent="red" />
       </div>
 
       <div className="grid-dashboard">
@@ -146,27 +148,98 @@ export function DashboardPage() {
               ))}
             </div>
           </div>
+
+          {/* Jelmagyarázat */}
+          <div className="cashflow-legend">
+            <span className="cashflow-legend-item">
+              <span className="cashflow-legend-dot income" />
+              Bevétel
+            </span>
+            <span className="cashflow-legend-item">
+              <span className="cashflow-legend-dot expense" />
+              Kiadás
+            </span>
+          </div>
+
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={spendingTrend}>
+            <AreaChart data={spendingTrend} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="bevételFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#5b8cff" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#5b8cff" stopOpacity={0} />
+                  <stop offset="0%"   stopColor="#3ad6b5" stopOpacity={0.55} />
+                  <stop offset="100%" stopColor="#3ad6b5" stopOpacity={0.02} />
                 </linearGradient>
                 <linearGradient id="kiadásFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3ad6b5" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#3ad6b5" stopOpacity={0} />
+                  <stop offset="0%"   stopColor="#ff5c7a" stopOpacity={0.55} />
+                  <stop offset="100%" stopColor="#ff5c7a" stopOpacity={0.02} />
                 </linearGradient>
+                <filter id="glowGreen" x="-20%" y="-80%" width="140%" height="300%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#3ad6b5" floodOpacity="0.7" />
+                </filter>
+                <filter id="glowRed" x="-20%" y="-80%" width="140%" height="300%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ff5c7a" floodOpacity="0.7" />
+                </filter>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="label" tick={{ fill: '#8ea2c7', fontSize: 12 }} />
-              <YAxis tick={{ fill: '#8ea2c7', fontSize: 12 }} />
-              <Tooltip
-                contentStyle={{ background: '#101b30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
-                formatter={(v) => formatCurrency(v as number, user?.currency)}
+
+              <CartesianGrid strokeDasharray="3 6" vertical={false} stroke="rgba(255,255,255,0.05)" />
+              <XAxis
+                dataKey="label"
+                tick={{ fill: '#7a94bb', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                interval="preserveStartEnd"
               />
-              <Area type="monotone" dataKey="bevétel" stroke="#5b8cff" fill="url(#bevételFill)" strokeWidth={2.5} />
-              <Area type="monotone" dataKey="kiadás" stroke="#3ad6b5" fill="url(#kiadásFill)" strokeWidth={2.5} />
+              <YAxis
+                tick={{ fill: '#7a94bb', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}e` : String(v)}
+                width={42}
+              />
+              <Tooltip
+                cursor={{ stroke: 'rgba(58,214,181,0.2)', strokeWidth: 1, strokeDasharray: '5 4' }}
+                contentStyle={{
+                  background: 'rgba(10,18,35,0.97)',
+                  border: '1px solid rgba(58,214,181,0.3)',
+                  borderRadius: 14,
+                  padding: '10px 16px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+                }}
+                labelStyle={{ color: '#c4d4f0', fontWeight: 700, fontSize: '0.85rem', marginBottom: 6 }}
+                itemStyle={{ color: '#dce6f8', fontSize: '0.9rem' }}
+                formatter={(v: number, name: string) => [
+                  formatCurrency(v, user?.currency),
+                  name === 'bevétel' ? 'Bevétel' : 'Kiadás',
+                ]}
+                labelFormatter={(label: string, payload: any[]) => {
+                  if (payload?.[0]?.payload?.fullLabel) return payload[0].payload.fullLabel;
+                  if (range === '30d') {
+                    const monthStr = now.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long' });
+                    return `${monthStr} ${label}`;
+                  }
+                  return label;
+                }}
+              />
+
+              <Area
+                type="monotone"
+                dataKey="bevétel"
+                stroke="#3ad6b5"
+                strokeWidth={2.5}
+                fill="url(#bevételFill)"
+                dot={false}
+                activeDot={{ r: 6, fill: '#3ad6b5', stroke: '#0a1223', strokeWidth: 2.5 }}
+                style={{ filter: 'url(#glowGreen)' }}
+              />
+              <Area
+                type="monotone"
+                dataKey="kiadás"
+                stroke="#ff5c7a"
+                strokeWidth={2.5}
+                fill="url(#kiadásFill)"
+                dot={false}
+                activeDot={{ r: 6, fill: '#ff5c7a', stroke: '#0a1223', strokeWidth: 2.5 }}
+                style={{ filter: 'url(#glowRed)' }}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </Card>
@@ -180,7 +253,7 @@ export function DashboardPage() {
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie data={categoryBreakdown} dataKey="value" nameKey="name" innerRadius={52} outerRadius={85} paddingAngle={4}>
-                    {categoryBreakdown.map((e, i) => <Cell key={e.name} fill={COLORS[i % COLORS.length]} />)}
+                    {categoryBreakdown.map((e) => <Cell key={e.name} fill={e.color} />)}
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: '#101b30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
@@ -189,9 +262,9 @@ export function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="legend-list">
-                {categoryBreakdown.map((item, i) => (
+                {categoryBreakdown.map((item) => (
                   <div key={item.name} className="legend-item">
-                    <span className="legend-dot" style={{ background: COLORS[i % COLORS.length] }} />
+                    <span className="legend-dot" style={{ background: item.color }} />
                     <span>{item.name}</span>
                     <strong>{formatCurrency(item.value, user?.currency)}</strong>
                   </div>
@@ -199,60 +272,61 @@ export function DashboardPage() {
               </div>
             </>
           ) : (
-            <p className="muted">Nincs kiadás ebben a hónapban.</p>
+            <p className="muted" style={{ textAlign: 'center', padding: '40px 0' }}>Nincs kiadás ebben a hónapban.</p>
           )}
         </Card>
       </div>
 
       <div className="grid-dashboard">
-        <Card className="chart-card large">
+        <Card className="chart-card">
           <div className="section-head">
-            <div><h3>Legutóbbi tranzakciók</h3><p>Az utolsó 6 pénzmozgás gyors áttekintése.</p></div>
+            <div><h3>Legutóbbi tranzakciók</h3><p>Az utolsó 5 mozgás.</p></div>
           </div>
-          <div className="transaction-list">
-            {transactions.length === 0
-              ? <p className="muted">Még nincs rögzített tranzakció.</p>
-              : [...transactions]
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                  .slice(0, 6)
-                  .map((item) => (
-                    <div key={item.id} className="transaction-row">
-                      <div>
-                        <strong>{item.note || item.place || 'Tranzakció'}</strong>
-                        <p>{item.category?.name ?? TX_TYPE_LABEL[item.type] ?? item.type} • {new Date(item.date).toLocaleDateString('hu-HU')}</p>
-                      </div>
-                      <strong className={item.type === 'EXPENSE' ? 'negative' : 'positive'}>
-                        {item.type === 'EXPENSE' ? '-' : '+'}{formatCurrency(toNumber(item.amount), user?.currency)}
-                      </strong>
-                    </div>
-                  ))}
+          <div className="stack-sm">
+            {transactions.length === 0 && <p className="muted">Még nincs rögzített tranzakció.</p>}
+            {[...transactions]
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .slice(0, 5)
+              .map((item) => (
+                <div key={item.id} className="tx-row">
+                  <div className="tx-info">
+                    <strong>{item.category?.name ?? TX_TYPE_LABEL[item.type] ?? item.type}</strong>
+                    <span className="muted">{new Date(item.date).toLocaleDateString('hu-HU')}</span>
+                  </div>
+                  <span className={item.type === 'INCOME' ? 'positive' : item.type === 'EXPENSE' ? 'negative' : ''}>
+                    {item.type === 'INCOME' ? '+' : item.type === 'EXPENSE' ? '-' : ''}
+                    {formatCurrency(toNumber(item.amount), user?.currency)}
+                  </span>
+                </div>
+              ))}
           </div>
         </Card>
 
         <Card className="chart-card">
           <div className="section-head">
-            <div><h3>Keretfelhasználás</h3><p>Aktuális hónap – automatikus számítás.</p></div>
+            <div><h3>Keretállapot</h3><p>Az aktuális hónap kihasználtsága.</p></div>
           </div>
-          <div className="stack-md">
-            {budgetStatus.length === 0
-              ? <p className="muted">Nincs beállított keret erre a hónapra.</p>
-              : budgetStatus.map((item) => (
-                  <div key={item.id}>
-                    <div className="row between compact">
-                      <strong>{item.category}</strong>
-                      <span>{formatCurrency(item.spent, user?.currency)} / {formatCurrency(item.limit, user?.currency)}</span>
-                    </div>
-                    <div className="progress-track">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width: `${item.percent}%`,
-                          background: item.percent >= 100 ? '#ff8a8a' : item.percent >= 75 ? '#ffc857' : undefined,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+          <div className="stack-sm">
+            {budgetStatus.length === 0 && <p className="muted">Nincs beállított keret erre a hónapra.</p>}
+            {budgetStatus.map((b) => (
+              <div key={b.id} className="budget-mini">
+                <div className="row between">
+                  <span>{b.category}</span>
+                  <span className={b.percent >= 100 ? 'negative' : 'muted'} style={{ fontSize: '0.82rem' }}>
+                    {formatCurrency(b.spent, user?.currency)} / {formatCurrency(b.limit, user?.currency)}
+                  </span>
+                </div>
+                <div className="progress-track" style={{ marginTop: 5 }}>
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${b.percent}%`,
+                      background: b.percent >= 100 ? '#ff5c7a' : b.percent >= 75 ? '#ffc857' : undefined,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
       </div>
@@ -260,9 +334,9 @@ export function DashboardPage() {
   );
 }
 
-function MetricCard({ label, value, accent }: { label: string; value: string; accent: 'blue' | 'green' | 'red' }) {
+function MetricCard({ label, value, accent }: { label: string; value: string; accent?: 'blue' | 'green' | 'red' }) {
   return (
-    <Card className={`metric-card ${accent}`}>
+    <Card className={`metric-card ${accent ?? ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </Card>
