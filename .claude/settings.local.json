@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python scripts/office/unpack.py \"C:\\\\Users\\\\User\\\\Downloads\\\\SpendWise_Doc \\(1\\).docx\" unpacked_doc1/)",
+      "Bash(py --version)",
+      "Bash(pandoc --version)",
+      "Bash(cd /tmp)",
+      "Bash(unzip -p doc1.docx word/document.xml)",
+      "Bash(node /tmp/new_section.js)",
+      "Bash(node \"C:/Users/User/AppData/Local/Temp/new_section.js\")",
+      "Bash(echo $TEMP)",
+      "Read(//c/Users/User/Downloads/SpendWise-main/SpendWise-main/**)",
+      "Bash(node \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\new_section.js\")",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)"
+    ]
+  }
+}
