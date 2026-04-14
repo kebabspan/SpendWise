@@ -1,17 +1,9 @@
-/* ============================================================
-   LAYOUT – asztali nézet: sidebar + tartalom egymás mellett
-   ============================================================ */
 .app-bg {
   min-height: 100vh;
   display: flex;
   flex-direction: row;
 }
 
-/* ============================================================
-   SIDEBAR
-   Az asztali nézeten normál flow-ban van (nem fixed/absolute).
-   Mobilon kicsúszik balról – CSS animációval.
-   ============================================================ */
 .sidebar {
   width: 240px;
   min-width: 240px;
@@ -22,7 +14,6 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  /* NEM position:fixed asztali nézeten */
 }
 
 .brand {
@@ -45,7 +36,6 @@
   box-shadow: 0 8px 20px rgba(91,140,255,0.3);
 }
 
-/* X gomb – csak mobilon látható */
 .sidebar-close-btn {
   margin-left: auto;
   display: none;
@@ -69,9 +59,6 @@
   box-shadow: inset 0 0 0 1px rgba(91,140,255,0.2);
 }
 
-/* ============================================================
-   OVERLAY – csak mobilon aktív, JS vezérli a class-t
-   ============================================================ */
 .sidebar-overlay {
   display: none;
   position: fixed; inset: 0;
@@ -79,9 +66,6 @@
   z-index: 40;
 }
 
-/* ============================================================
-   CONTENT SHELL
-   ============================================================ */
 .content-shell {
   flex: 1;
   min-width: 0;
@@ -91,9 +75,6 @@
   overflow-x: hidden;
 }
 
-/* ============================================================
-   TOPBAR
-   ============================================================ */
 .topbar {
   display: flex; align-items: center;
   justify-content: space-between; gap: 14px;
@@ -109,8 +90,6 @@
 .topbar p  { margin: 3px 0 0; color: #9eb0d0; font-size: 0.87rem; }
 
 .topbar-slim { padding: 10px 16px; margin-bottom: 20px; }
-
-/* Hamburger eltávolítva – az oldalsáv mindig látható */
 
 .profile-chip {
   display: flex; align-items: center; gap: 9px;
@@ -134,9 +113,6 @@
 
 .page-body { display: flex; flex-direction: column; gap: 18px; }
 
-/* ============================================================
-   KPI CARDS
-   ============================================================ */
 .grid-kpis {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -151,9 +127,6 @@
 .metric-card.green { background: linear-gradient(135deg, rgba(58,214,181,0.2), rgba(255,255,255,0.02)); }
 .metric-card.red   { background: linear-gradient(135deg, rgba(255,100,100,0.18), rgba(255,255,255,0.02)); }
 
-/* ============================================================
-   DASHBOARD GRID
-   ============================================================ */
 .grid-dashboard {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
@@ -175,9 +148,6 @@
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 
-/* ============================================================
-   TRANSACTIONS
-   ============================================================ */
 .transaction-list { display: flex; flex-direction: column; gap: 8px; }
 
 .transaction-row {
@@ -217,9 +187,6 @@
 .type-badge.type-expense  { background: rgba(255,138,138,0.15); color: #ff8a8a; }
 .type-badge.type-transfer { background: rgba(91,140,255,0.15);  color: #5b8cff; }
 
-/* ============================================================
-   MODALS
-   ============================================================ */
 .modal-backdrop {
   position: fixed; inset: 0;
   background: rgba(3,7,18,0.72);
@@ -243,9 +210,6 @@
 }
 .modal-head h3 { margin: 0; }
 
-/* ============================================================
-   BUDGETS
-   ============================================================ */
 .budget-item-card {
   padding: 13px 15px; border-radius: 14px;
   background: rgba(255,255,255,0.03);
@@ -265,9 +229,6 @@
 
 .progress-label { margin: 4px 0 0; font-size: 0.79rem; }
 
-/* ============================================================
-   REPORTS
-   ============================================================ */
 .report-card {
   display: flex; align-items: flex-start; gap: 13px;
   padding: 13px 15px; border-radius: 13px;
@@ -284,9 +245,6 @@
   background: rgba(255,255,255,0.07);
 }
 
-/* ============================================================
-   RANGE TABS
-   ============================================================ */
 .range-tabs { display: flex; gap: 4px; flex-shrink: 0; }
 
 .range-tab {
@@ -302,9 +260,6 @@
   box-shadow: 0 0 10px rgba(91,140,255,0.2);
 }
 
-/* ============================================================
-   CASHFLOW CHART – jelmagyarázat + recharts fix
-   ============================================================ */
 .cashflow-legend {
   display: flex;
   gap: 20px;
@@ -327,15 +282,10 @@
 .cashflow-legend-dot.income  { background: #3ad6b5; box-shadow: 0 0 6px rgba(58,214,181,0.7); }
 .cashflow-legend-dot.expense { background: #ff5c7a; box-shadow: 0 0 6px rgba(255,92,122,0.7); }
 
-/* Recharts: klikk utáni fehér villanás kiiktatása */
 .recharts-area-area { transition: none !important; }
 .recharts-active-dot circle { paint-order: stroke; }
-/* Cursor vonalat ne fehérítsük el */
 .recharts-tooltip-cursor { stroke: rgba(140,180,255,0.25) !important; }
 
-/* ============================================================
-   COLOR PICKER
-   ============================================================ */
 .color-picker {
   display: flex; flex-wrap: wrap; gap: 7px;
   margin-top: 5px; padding: 11px;
@@ -354,18 +304,12 @@
   box-shadow: 0 0 0 3px rgba(255,255,255,0.22);
 }
 
-/* ============================================================
-   PAGE HEADER
-   ============================================================ */
 .page-header {
   display: flex; align-items: center;
   justify-content: space-between; gap: 14px; flex-wrap: wrap;
 }
 .page-header h2 { margin: 0; font-size: 1.4rem; }
 
-/* ============================================================
-   BUTTONS & ICONS
-   ============================================================ */
 .icon-btn {
   width: 34px; height: 34px; border-radius: 9px;
   cursor: pointer; display: grid; place-items: center;
@@ -375,9 +319,6 @@
 .icon-btn:hover        { background: rgba(255,255,255,0.12); color: white; }
 .icon-btn.danger:hover { background: rgba(255,138,138,0.18); color: #ff8a8a; }
 
-/* ============================================================
-   LEGEND
-   ============================================================ */
 .legend-list { display: flex; flex-direction: column; gap: 7px; margin-top: 11px; }
 
 .legend-item { display: flex; align-items: center; gap: 9px; font-size: 0.83rem; }
@@ -385,9 +326,6 @@
 
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-/* ============================================================
-   STACK / ROW HELPERS
-   ============================================================ */
 .stack-md { display: flex; flex-direction: column; gap: 11px; }
 .stack-sm { display: flex; flex-direction: column; gap: 7px; }
 .stack-lg { display: flex; flex-direction: column; gap: 15px; }
@@ -400,9 +338,6 @@
 .row.gap-md  { gap: 10px; }
 .row.compact { align-items: center; }
 
-/* ============================================================
-   CATEGORY ROW (manager modal)
-   ============================================================ */
 .category-row {
   display: flex; align-items: center; gap: 12px;
   padding: 11px 13px; border-radius: 13px;
@@ -414,9 +349,6 @@
   width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; display: inline-block;
 }
 
-/* ============================================================
-   ONBOARDING BANNER
-   ============================================================ */
 .onboarding-banner {
   display: flex; align-items: center; gap: 14px;
   padding: 16px 18px; border-radius: 16px;
@@ -485,9 +417,6 @@
 .cat-type { margin-left: auto; font-size: 0.73rem; color: #8ea2c7; }
 .cat-check { position: absolute; top: 7px; right: 7px; color: #3ad6b5; }
 
-/* ============================================================
-   ERROR BOX
-   ============================================================ */
 .error-box {
   padding: 9px 13px; border-radius: 11px;
   background: rgba(255,138,138,0.11);
@@ -495,18 +424,12 @@
   color: #ff8a8a; font-size: 0.86rem;
 }
 
-/* ============================================================
-   RESPONSIVE – tablet 1100px
-   ============================================================ */
 @media (max-width: 1100px) {
   .grid-dashboard { grid-template-columns: 1fr; }
   .grid-kpis      { grid-template-columns: repeat(3, 1fr); }
   .grid-4         { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* ============================================================
-   RESPONSIVE – tablet (769px – 1000px): ikon-only sidebar
-   ============================================================ */
 @media (min-width: 769px) and (max-width: 1000px) {
   .sidebar {
     width: 64px;
@@ -514,25 +437,17 @@
     padding: 22px 10px;
   }
 
-  /* Brand: csak az ikon badge maradjon */
   .brand > div:not(.brand-badge) { display: none; }
   .brand { justify-content: center; padding: 0; }
 
-  /* Nav: csak ikonok, szöveg elrejtve */
   .nav-item span { display: none; }
   .nav-item { justify-content: center; padding: 11px 0; }
 }
 
-/* ============================================================
-   RESPONSIVE – mobilok (max 768px)
-   Az oldalsáv mindig látható, a layout oszlopba vált.
-   ============================================================ */
 @media (max-width: 768px) {
 
-  /* Layout: oldalsáv felül, tartalom alul */
   .app-bg { flex-direction: column; }
 
-  /* Oldalsáv: vízszintes sáv a tetején */
   .sidebar {
     width: 100% !important;
     min-width: 0 !important;
@@ -568,35 +483,26 @@
 
   .content-shell { padding: 12px; }
 
-  /* Topbar: kisebb */
   .topbar { padding: 11px 14px; gap: 10px; }
   .topbar h1 { font-size: 1.15rem; }
 
-  /* KPI kártyák: egymás alatt */
   .grid-kpis { grid-template-columns: 1fr; }
 
-  /* Dashboard grid: egymás alatt */
   .grid-dashboard { grid-template-columns: 1fr; }
 
-  /* Form gridek mobilon egy oszlop */
   .grid-2,
   .grid-4 { grid-template-columns: 1fr; }
 
-  /* Profil chip – csak avatar + icon mobilon */
   .profile-chip-info { display: none; }
 
-  /* Kategória választó – egy oszlop */
   .cat-select-grid { grid-template-columns: 1fr; }
 
-  /* Metric kártya kisebb font */
   .metric-card strong { font-size: 1.3rem; }
 
-  /* Page header mobilon egymás alá */
   .page-header { flex-direction: column; align-items: flex-start; }
   .page-header .row { flex-wrap: wrap; }
 }
 
-/* ===================== ACCOUNTS PAGE ===================== */
 .accounts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -638,7 +544,6 @@
 .account-card__stats > div { display: flex; flex-direction: column; gap: 3px; }
 .account-card__stats span { color: #7a93bb; }
 
-/* ===================== GOALS PAGE ===================== */
 .goals-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -664,7 +569,6 @@
   border-radius: 20px; padding: 2px 10px; font-weight: 600; white-space: nowrap;
 }
 
-/* ===================== RECURRING PAGE ===================== */
 .recurring-row {
   display: flex; align-items: center; gap: 14px;
   padding: 14px 0;
@@ -685,7 +589,6 @@
   border-radius: 20px; padding: 2px 10px; font-weight: 600;
 }
 
-/* ===================== REPORTS PAGE ===================== */
 .forecast-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -705,7 +608,6 @@
 .forecast-item.warn { background: rgba(255,180,0,0.08); }
 .forecast-item.good { background: rgba(58,214,181,0.08); }
 
-/* ===================== DASHBOARD – RECENT TRANSACTIONS ===================== */
 .tx-row {
   display: flex;
   align-items: center;
@@ -734,23 +636,17 @@
 }
 .tx-info .muted { font-size: 0.79rem; }
 
-/* ===================== MISC HELPERS ===================== */
 .metric-card.red   strong { color: #ff5c7a !important; }
 .metric-card.green strong { color: #3ad6b5 !important; }
 
-/* Kötelező mező jelzése */
 .required-star { color: #ff8a8a; margin-left: 2px; font-size: 0.85rem; }
 
-/* Kategória sor – explicit szövegszín a sötét háttéren */
 .category-row { color: #dce6f8; }
 .category-row strong { color: #f3f6ff; }
 
-/* grid-2 override (matches ui.css but with slightly larger gap) */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
 
-/* ===================== TRANSACTION FILTER GRID ===================== */
-/* 5 columns for the expanded filter bar (year, month, type, category, account) */
 .filter-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
