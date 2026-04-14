@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep -rn \"//\" \"c:/Users/User/Downloads/SpendWise-main \\(1\\)/SpendWise-main/frontend/src\" --include=\"*.ts\" --include=\"*.tsx\")"
-    ]
-  }
-}
