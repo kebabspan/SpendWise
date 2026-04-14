@@ -50,12 +50,10 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Számla form
   const [accountName, setAccountName] = useState('');
   const [accountBalance, setAccountBalance] = useState('');
   const [accountColor, setAccountColor] = useState('#5b8cff');
 
-  // Kategória kiválasztás
   const [selectedCats, setSelectedCats] = useState<typeof DEFAULT_CATEGORIES>([...DEFAULT_CATEGORIES]);
 
   const toggleCat = (name: string) => {

@@ -41,7 +41,6 @@ export class CreateTransactionDto {
   toAccountId?: string;
 }
 
-// Külön DTO a PATCH-hez: minden mező opcionális, nincs @IsNotEmpty() kényszer
 export class UpdateTransactionDto {
   @IsNumber()
   @IsOptional()

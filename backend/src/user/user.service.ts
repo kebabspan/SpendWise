@@ -10,7 +10,6 @@ export class UserService {
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      // Nem küldjük vissza a jelszót biztonsági okokból
       select: {
         id: true,
         email: true,
@@ -28,7 +27,6 @@ export class UserService {
   async updateProfile(userId: string, dto: UpdateUserDto) {
     const updateData: any = { ...dto };
 
-    // Ha a felhasználó jelszót is akar módosítani
     if (dto.password) {
       updateData.password = await bcrypt.hash(dto.password, 10);
     }

@@ -1,6 +1,5 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-// Ez segít, hogy csak INCOME vagy EXPENSE lehessen a típus
 enum TransactionType {
   INCOME = 'INCOME',
   EXPENSE = 'EXPENSE',

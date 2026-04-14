@@ -77,8 +77,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     } finally { setLoading(false); }
   }, []);
 
-  // Alkalmazás indulásakor: feldolgozza az esedékes ismétlődő tranzakciókat,
-  // majd betölti az összes adatot (hogy a frissített egyenlegek is megjelenjenek).
   useEffect(() => {
     api.post('/recurring/process').catch(() => {}).finally(() => refreshAll());
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -101,7 +99,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const deleteGoal = useCallback(async (id: string) => { await api.delete(`/goals/${id}`); await refreshAll(); }, [refreshAll]);
   const addRecurring = useCallback(async (p: any) => {
     await api.post('/recurring', p);
-    // Azonnal feldolgozza ha a kezdő dátum ma vagy korábban van
     await api.post('/recurring/process').catch(() => {});
     await refreshAll();
   }, [refreshAll]);

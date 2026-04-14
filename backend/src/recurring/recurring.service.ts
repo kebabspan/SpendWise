@@ -50,10 +50,6 @@ export class RecurringService {
     return this.prisma.recurringTransaction.delete({ where: { id } });
   }
 
-  /** Feldolgozza az összes esedékes ismétlődő tranzakciót:
-   *  - Létrehozza a valós tranzakciót és frissíti a számlaegyenleget
-   *  - Lépteti a nextDate-t a következő esedékességre
-   */
   async processRecurring(userId: string): Promise<{ processed: number }> {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
@@ -67,7 +63,6 @@ export class RecurringService {
     for (const item of dueItems) {
       let nextDate = new Date(item.nextDate);
 
-      // Az összes esedékes dátumot végigfutjuk (pl. ha több hónap is kimaradt)
       while (nextDate <= todayEnd) {
         if (item.accountId) {
           await this.prisma.$transaction(async (tx) => {
@@ -101,7 +96,6 @@ export class RecurringService {
         nextDate = this.advanceDate(nextDate, item.frequency as string);
       }
 
-      // Frissítjük a következő esedékességet
       await this.prisma.recurringTransaction.update({
         where: { id: item.id },
         data: { nextDate },

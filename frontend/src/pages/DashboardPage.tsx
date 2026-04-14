@@ -35,7 +35,6 @@ export function DashboardPage() {
     setOnboardingDismissed(true);
   };
 
-  // Mutatjuk az onboarding bannert ha: nincs elrejtve ÉS nincs még számla
   const showOnboarding = !onboardingDismissed && !loading && accounts.length === 0;
 
   const monthlyTransactions = transactions.filter((t) => {
@@ -47,10 +46,8 @@ export function DashboardPage() {
   const monthlyIncome = monthlyTransactions.filter((t) => t.type === 'INCOME').reduce((s, t) => s + toNumber(t.amount), 0);
   const monthlyExpenses = monthlyTransactions.filter((t) => t.type === 'EXPENSE').reduce((s, t) => s + toNumber(t.amount), 0);
 
-  // Grafikon adatok
   const spendingTrend = (() => {
     if (range === '7d') {
-      // Utolsó 7 nap, naponta
       return Array.from({ length: 7 }).map((_, i) => {
         const date = new Date(now);
         date.setDate(now.getDate() - (6 - i));
@@ -66,7 +63,6 @@ export function DashboardPage() {
       });
     }
     if (range === '30d') {
-      // Az aktuális hónap összes napja (1-től a hónap végéig)
       const year = now.getFullYear();
       const month = now.getMonth();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -82,7 +78,6 @@ export function DashboardPage() {
         };
       });
     }
-    // 6 hónap – havi bontás
     return Array.from({ length: 6 }).map((_, i) => {
       const date = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
       const items = transactions.filter((t) => {

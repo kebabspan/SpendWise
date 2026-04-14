@@ -14,7 +14,6 @@ function setupHealthCheck(app: INestApplication) {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger: ['log', 'warn', 'error'] });
 
-  // Swagger
   const config = new DocumentBuilder()
     .setTitle('SpendWise API')
     .setDescription('SpendWise backend API')

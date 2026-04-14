@@ -57,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (payload: RegisterPayload) => {
-    // A register endpoint most már közvetlenül tokent ad vissza
     const { data } = await api.post<LoginResponse>('/auth/register', payload);
     persistAuth(data);
   };

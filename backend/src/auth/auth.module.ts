@@ -15,10 +15,8 @@ JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        // A végére tett felkiáltójel mondja meg a TS-nek, hogy "nyugi, ott lesz az"
-        secret: config.get<string>('JWT_SECRET')!, 
+        secret: config.get<string>('JWT_SECRET')!,
         signOptions: {
-          // Itt pedig kényszerítjük a típust, hogy elfogadja stringként
           expiresIn: config.get<string>('JWT_EXPIRES_IN') as any || '7d',
         },
       }),

@@ -16,7 +16,6 @@ export function ReportsPage() {
   const currentMonth = now.getMonth();
   const currentYear  = now.getFullYear();
 
-  // --- CSV export ---
   const exportCSV = () => {
     const headers = ['Dátum', 'Típus', 'Összeg', 'Kategória', 'Számla', 'Helyszín', 'Megjegyzés'];
     const rows = [...transactions]
@@ -38,7 +37,6 @@ export function ReportsPage() {
     a.click(); URL.revokeObjectURL(url);
   };
 
-  // --- Előrejelzés ---
   const forecast = useMemo(() => {
     const last3Months = [0, 1, 2].map((offset) => {
       const d = new Date(currentYear, currentMonth - 1 - offset, 1);
@@ -63,7 +61,6 @@ export function ReportsPage() {
     return { avgMonthly, projected, diff, dayOfMonth, daysInMonth };
   }, [transactions]);
 
-  // --- Szöveges riportok ---
   const currentExpenses = transactions.filter((t) => {
     const d = new Date(t.date);
     return t.type === 'EXPENSE' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
@@ -76,7 +73,6 @@ export function ReportsPage() {
 
   const reports: Array<{ title: string; text: string; tone: 'good' | 'warn' | 'bad' }> = [];
 
-  // Kategória összehasonlítás
   const categoryMap = new Map<string, { cur: number; prev: number; name: string }>();
   [...currentExpenses, ...prevExpenses].forEach((t) => {
     const entry = categoryMap.get(t.categoryId || 'other') || { cur: 0, prev: 0, name: t.category?.name ?? 'Egyéb' };
@@ -96,14 +92,12 @@ export function ReportsPage() {
     }
   });
 
-  // Keret túllépések
   budgets.filter((b) => b.month === currentMonth + 1 && b.year === currentYear).forEach((budget) => {
     const spent = currentExpenses.filter((t) => t.categoryId === budget.categoryId).reduce((s, t) => s + toNumber(t.amount), 0);
     const limit = toNumber(budget.limitAmount);
     if (spent > limit) reports.push({ title: `${budget.category.name} – keret túllépve`, text: `A(z) ${budget.category.name.toLowerCase()} keretet ${formatCurrency(spent - limit, user?.currency)}-vel lépte túl.`, tone: 'bad' });
   });
 
-  // Legköltségesebb nap
   const dailyMap = currentExpenses.reduce<Record<string, number>>((acc, t) => {
     const day = new Date(t.date).toISOString().slice(0, 10);
     acc[day] = (acc[day] || 0) + toNumber(t.amount);

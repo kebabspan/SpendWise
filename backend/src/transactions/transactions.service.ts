@@ -9,7 +9,6 @@ export class TransactionsService {
   async findAll(userId: string) {
     return this.prisma.transaction.findMany({
       where: { userId },
-      // A sémád szerint ezek a kapcsolatnevek!
       include: { category: true, fromAccount: true, toAccount: true },
       orderBy: { date: 'desc' },
     });
@@ -17,22 +16,20 @@ export class TransactionsService {
 
   async create(userId: string, dto: CreateTransactionDto) {
     return this.prisma.$transaction(async (tx) => {
-      // 1. Tranzakció létrehozása
       const transaction = await tx.transaction.create({
         data: {
           amount: dto.amount,
-          note: dto.description, // DTO-ból jön a description, de a sémában 'note'
+          note: dto.description,
           place: dto.place,
-          type: dto.type as any, // Enum típusillesztés
+          type: dto.type as any,
           date: dto.date ? new Date(dto.date) : new Date(),
           userId,
           categoryId: dto.categoryId,
-          fromAccountId: dto.accountId, // DTO-ból jön az accountId, de a sémában 'fromAccountId'
+          fromAccountId: dto.accountId,
           toAccountId: dto.toAccountId,
         },
       });
 
-      // 2. Egyenleg frissítés (EXPENSE vagy INCOME esetén is a fromAccountId-t nézzük a DTO-ból)
       if (dto.type === 'EXPENSE' && dto.accountId) {
         await tx.account.update({
           where: { id: dto.accountId },
@@ -98,27 +95,22 @@ export class TransactionsService {
     });
   }
 
-  // PATCH: összeg, megjegyzés, helyszín, dátum, kategória módosítható
-  // Ha összeg változik, visszavonjuk a régi egyenleghatást és alkalmazzuk az újat
   async update(userId: string, id: string, dto: UpdateTransactionDto) {
     const transaction = await this.prisma.transaction.findFirst({ where: { id, userId } });
     if (!transaction) throw new NotFoundException('Tranzakció nem található');
 
     return this.prisma.$transaction(async (tx) => {
-      // Ha összeg változik, egyenleg-korrekció szükséges
       if (dto.amount !== undefined && Number(dto.amount) !== Number(transaction.amount)) {
         const oldAmount = Number(transaction.amount);
         const newAmount = Number(dto.amount);
-        const diff = newAmount - oldAmount; // pozitív = növekedés
+        const diff = newAmount - oldAmount;
 
         if (transaction.type === 'EXPENSE' && transaction.fromAccountId) {
-          // EXPENSE: több összeg → több levonás (decrement)
           await tx.account.update({
             where: { id: transaction.fromAccountId },
             data: { balance: { decrement: diff } },
           });
         } else if (transaction.type === 'INCOME' && transaction.fromAccountId) {
-          // INCOME: több összeg → több hozzáadás (increment)
           await tx.account.update({
             where: { id: transaction.fromAccountId },
             data: { balance: { increment: diff } },
