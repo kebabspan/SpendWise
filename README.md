@@ -1,9 +1,10 @@
 # SpendWise – Frontend indítási útmutató
 
 ## Előfeltételek
-- Node.js 18+
-- pnpm telepítve (`npm install -g pnpm`)
-- A backend fut (Docker)
+ - Docker Desktop (Windows/macOS) vagy Docker Engine + Docker Compose (Linux) – 4.x+
+ - Legalább 8 GB RAM és elegendő szabad tárhely a Docker image-ekhez
+ - Visual Studio Code (ajánlott fejlesztői környezet)
+
 
 ## Indítás
 
