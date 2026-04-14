@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.45, for Linux (x86_64)
 --
--- Host: localhost    Database: chronos
+-- Host: localhost    Database: spendwise
 -- ------------------------------------------------------
 -- Server version	8.0.45
 

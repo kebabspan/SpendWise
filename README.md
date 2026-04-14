@@ -1,46 +1,64 @@
-# SpendWise – Frontend indítási útmutató
+# SpendWise
 
-## Előfeltételek
- - Docker Desktop (Windows/macOS) vagy Docker Engine + Docker Compose (Linux) – 4.x+
- - Legalább 8 GB RAM és elegendő szabad tárhely a Docker image-ekhez
- - Visual Studio Code (ajánlott fejlesztői környezet)
+A SpendWise egy webalapú pénzügyi nyilvántartó alkalmazás, ahol az emberek egyszerűen rögzíthetik bevételeiket, kiadásaikat, kezelhetik számláikat, és nyomon követhetik megtakarítási céljaikat. A rendszer számlaalapú: a felhasználók külön pénzügyi "zsebeket" kezelhetnek (készpénz, bankszámla, megtakarítás), és minden tranzakciót ezekhez rendelnek. Van egy riportmodul is, ami vizuálisan is megmutatja, hogyan alakulnak a pénzügyek.
 
 
 ## Indítás
 
-### Függőségek telepítése
-```powershell
-pnpm install
+**Egyetlen előfeltétel: Docker Desktop legyen telepítve és fusson.**
+
+```bash
+docker compose up --build
 ```
 
-### Fejlesztői szerver indítása
-```powershell
-pnpm run dev
-```
+Az első indítás 1-3 percet vehet igénybe (npm install + Prisma generálás + adatbázis séma létrehozása).
 
-Böngészőben: http://localhost:5173 (vagy 5174 ha foglalt)
+### Elérhetőségek
 
-### Build (produkciós)
-```powershell
-pnpm run build
-```
+| Szolgáltatás | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:3001/api |
+| Swagger docs | http://localhost:3001/api/docs |
+| MySQL | localhost:3307 (user: `root` / pass: `root`) |
 
-### Build előnézet
-```powershell
-pnpm run preview
+---
+
+## Hasznos parancsok
+
+```bash
+# Indítás (újrabuildelés nélkül, ha már le van buildeve)
+docker compose up
+
+# Leállítás
+docker compose down
+
+# Leállítás + adatbázis törlése (tiszta újraindításhoz)
+docker compose down -v
+
+# Logok követése
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Backend shell
+docker exec -it spendwise_backend sh
 ```
 
 ---
 
-## Környezeti változók
-Hozz létre egy `.env.local` fájlt a `frontend/` mappában ha eltérő backend URL-t használsz:
+## Gyakori hibák
 
-```
-VITE_API_URL=http://localhost:3001/api
+### A backend nem indul el
+
+Várj 30-60 másodpercet – a backend megvárja, amíg a MySQL elindul, de az első adatbázis-inicializálás eltarthat egy ideig. Ha tartósan nem indul:
+
+```bash
+docker compose restart backend
 ```
 
-## Portok
-| Szolgáltatás | Port |
-|---|---|
-| Frontend (dev) | http://localhost:5173 |
-| Backend API | http://localhost:3001/api |
+### Tiszta újraindítás (ha valami elromlott)
+
+```bash
+docker compose down -v
+docker compose up --build
+```

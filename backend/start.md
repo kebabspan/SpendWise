@@ -8,14 +8,14 @@
 A `backend/` mappában hozd létre a `.env` fájlt az alábbi tartalommal:
 
 ```
-DATABASE_URL="mysql://root:root@mysql:3306/chronos"
+DATABASE_URL="mysql://root:root@mysql:3306/spendwise"
 JWT_SECRET="spendwise-super-secret-jwt-key-2026"
 ```
 
 PowerShellből (a projekt gyökeréből):
 ```powershell
 New-Item -Path "backend\.env" -ItemType File -Force
-Set-Content -Path "backend\.env" -Value "DATABASE_URL=`"mysql://root:root@mysql:3306/chronos`"`nJWT_SECRET=`"spendwise-super-secret-jwt-key-2026`""
+Set-Content -Path "backend\.env" -Value "DATABASE_URL=`"mysql://root:root@mysql:3306/spendwise`"`nJWT_SECRET=`"spendwise-super-secret-jwt-key-2026`""
 ```
 
 ---

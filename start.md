@@ -65,7 +65,7 @@ Az alkalmazás elérhető:
 
 ```env
 # MySQL kapcsolat – Docker Compose-on belül a service neve "mysql"
-DATABASE_URL="mysql://root:root@mysql:3306/chronos"
+DATABASE_URL="mysql://root:root@mysql:3306/spendwise"
 
 # JWT titkos kulcs – éles környezetben cseréld le!
 JWT_SECRET="spendwise-super-secret-jwt-key-2026"
@@ -151,7 +151,7 @@ docker exec -it spendwise_backend npx prisma generate
 
 ---
 
-### ❌ `Table 'chronos.User' doesn't exist`
+### ❌ `Table 'spendwise.User' doesn't exist`
 
 **Ok**: Az adatbázis séma nincs létrehozva.
 
