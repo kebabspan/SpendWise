@@ -17,7 +17,7 @@ export function RecurringPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<any | null>(null);
 
-  useEffect(() => { processRecurring(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { processRecurring(); }, []);
 
   const activeCount   = recurring.filter((r) => r.active).length;
   const monthlyTotal  = recurring

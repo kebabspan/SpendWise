@@ -99,7 +99,6 @@ function OnboardingModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Kezdeti beállítás" onClose={onClose}>
       <div className="onboarding-steps">
-        {/* Lépésjelző */}
         <div className="step-indicator">
           {(['welcome', 'account', 'category', 'done'] as Step[]).map((s, i) => (
             <div key={s} className={`step-dot ${step === s ? 'active' : i < (['welcome','account','category','done'] as Step[]).indexOf(step) ? 'done' : ''}`} />

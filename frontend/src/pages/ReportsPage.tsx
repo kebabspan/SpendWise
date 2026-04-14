@@ -116,7 +116,6 @@ export function ReportsPage() {
         <Button className="btn-secondary" onClick={exportCSV}><Download size={16} /> CSV export</Button>
       </div>
 
-      {/* Előrejelzés kártya */}
       <Card className="chart-card">
         <div className="section-head">
           <div>
@@ -145,7 +144,6 @@ export function ReportsPage() {
           </div>
         </div>
         <p style={{ marginTop: 12, fontSize: '0.85rem', color: '#9eb0d0' }}>
-          {/* BUG FIX: ha avgMonthly = 0, az osztás Infinity-t adna */}
           {forecast.avgMonthly === 0
             ? '📊 Nincs elegendő előzmény az összehasonlításhoz. Rögzítsen tranzakciókat az előző hónapokban.'
             : forecast.diff > forecast.avgMonthly * 0.1
@@ -156,7 +154,6 @@ export function ReportsPage() {
         </p>
       </Card>
 
-      {/* Szöveges riportok */}
       <Card className="chart-card">
         <div className="section-head">
           <div>

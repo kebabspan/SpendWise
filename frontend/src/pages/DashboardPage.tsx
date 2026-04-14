@@ -115,7 +115,6 @@ export function DashboardPage() {
 
   return (
     <div className="stack-xl">
-      {/* Onboarding banner – csak ha nincs még számla */}
       {showOnboarding && <OnboardingBanner onDismiss={dismissOnboarding} />}
 
       <div className="grid-kpis">
@@ -144,7 +143,6 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* Jelmagyarázat */}
           <div className="cashflow-legend">
             <span className="cashflow-legend-item">
               <span className="cashflow-legend-dot income" />

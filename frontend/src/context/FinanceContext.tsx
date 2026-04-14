@@ -79,7 +79,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     api.post('/recurring/process').catch(() => {}).finally(() => refreshAll());
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const addAccount = useCallback(async (p: any) => { await api.post('/accounts', p); await refreshAll(); }, [refreshAll]);
   const updateAccount = useCallback(async (id: string, p: any) => { await api.patch(`/accounts/${id}`, p); await refreshAll(); }, [refreshAll]);
