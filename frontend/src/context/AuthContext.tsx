@@ -83,7 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({ user, token, loading, login, register, logout, refreshUser, updateProfile }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, token, loading],
   );
 

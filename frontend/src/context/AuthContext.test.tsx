@@ -15,7 +15,6 @@ const mockApi = api as { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof 
 
 const mockUser = { id: 'u1', email: 'test@example.com', name: 'Test', currency: 'HUF', imageUrl: null };
 
-// Helper: egy egyszerű komponens ami useAuth()-ot használ
 function TestConsumer() {
   const { user, loading, token } = useAuth();
   if (loading) return <div>loading</div>;

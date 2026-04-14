@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 async function main() {
   console.log('--- SEEDELÉS INDÍTÁSA ---');
 
-  // Itt adjuk meg explicit módon a URL-t, így a Prisma nem fog panaszkodni
   const prisma = new PrismaClient({
     datasources: {
       db: {

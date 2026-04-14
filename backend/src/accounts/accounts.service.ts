@@ -31,7 +31,7 @@ export class AccountsService {
   }
 
   async update(userId: string, id: string, dto: UpdateAccountDto) {
-    await this.findOne(userId, id); // Ellenőrizzük, hogy létezik-e és az övé-e
+    await this.findOne(userId, id);
     return this.prisma.account.update({
       where: { id },
       data: dto,

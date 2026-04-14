@@ -39,7 +39,6 @@ describe('formatCurrency', () => {
 
   it('EUR pénznemet kezel', () => {
     const result = formatCurrency(100, 'EUR');
-    // jsdom-ban 'EUR' szöveg, böngészőben '€' – mindkettő elfogadott
     expect(result.includes('€') || result.includes('EUR')).toBe(true);
   });
 

@@ -22,7 +22,6 @@ async function bootstrap() {
     .build();
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config));
 
-  // CORS – localhost + helyi hálózat (LAN: 192.168.x.x, Docker: 172.x.x.x, VPN: 10.x.x.x)
   app.enableCors({
     origin: (origin, callback) => {
       if (
@@ -40,7 +39,6 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  // Healthcheck (a globális prefix előtt kell, ezért itt regisztráljuk)
   setupHealthCheck(app);
 
   app.useGlobalPipes(

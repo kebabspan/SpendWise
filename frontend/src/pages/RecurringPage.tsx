@@ -17,7 +17,6 @@ export function RecurringPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<any | null>(null);
 
-  // Oldal megnyitásakor feldolgozza az elmaradt ismétlődőket és frissíti a listát
   useEffect(() => { processRecurring(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeCount   = recurring.filter((r) => r.active).length;

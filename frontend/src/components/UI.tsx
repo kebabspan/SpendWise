@@ -45,25 +45,15 @@ export function Modal({
   );
 }
 
-// Szín választó – jól elkülöníthető, élénk paletta (piros, narancs, sárga, zöld, kék, lila, rózsaszín, szürke)
 const COLOR_PALETTE = [
-  // Piros árnyalatok
   '#e53935', '#ff5252', '#ff8a80',
-  // Narancs / barna
   '#f4511e', '#ff6d00', '#ffab40',
-  // Sárga
   '#f9a825', '#ffd600', '#ffee58',
-  // Zöld
   '#2e7d32', '#43a047', '#69f0ae',
-  // Türkiz / cián
   '#00838f', '#00bcd4', '#80deea',
-  // Kék
   '#1565c0', '#1e88e5', '#82b1ff',
-  // Lila / indigó
   '#4527a0', '#7b1fa2', '#ce93d8',
-  // Rózsaszín
   '#ad1457', '#e91e63', '#f48fb1',
-  // Szürke / fehér
   '#546e7a', '#90a4ae', '#cfd8dc',
 ];
 

@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-// Relatív URL: a Vite proxy továbbítja a backend felé.
-// Így bármilyen IP-ről (telefon, LAN) is működik, nem kell localhost.
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const api = axios.create({
